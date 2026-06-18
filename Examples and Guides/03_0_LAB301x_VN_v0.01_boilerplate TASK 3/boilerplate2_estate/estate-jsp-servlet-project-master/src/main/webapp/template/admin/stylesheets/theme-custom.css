@@ -1,0 +1,59 @@
+/* Add here all your CSS customizations */
+.page-header{
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding-left: 20px;
+}
+.nav-item{
+    display: inline-flex;
+    align-items: center;
+    text-align: center;
+    padding: 0 10px;
+    color: #e8e8e8;
+    font-size: 1.6rem;
+    letter-spacing: .1px;
+    height: 100%;
+    text-decoration: none;
+    box-sizing: content-box;
+    transition: .4s;
+}
+.nav-item.active{
+    background: #191c21;
+    color: #0088cc;
+    border-bottom: 4px solid #0088cc;
+    padding-top: 4px;
+}
+.nav-item:hover{
+    color: #e8e8e8;
+    background: #21262d;
+    text-decoration: none;
+    transition: .4s;
+}
+.content-body{
+    padding: 10px!important;
+    margin-top: 10px!important;
+}
+
+.dataTable .checkbox-custom{
+    padding: 0;
+}
+.dataTable .align-center{
+    text-align: center;
+}
+
+.myMultiSelect .btn-group,
+.myMultiSelect .multiselect,
+.myMultiSelect .multiselect-container{
+    width: 100%!important;
+}
+.myMultiSelect .multiselect{
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.buildingForm .control-label{
+    padding-left: 0;
+    padding-right: 0;
+}
