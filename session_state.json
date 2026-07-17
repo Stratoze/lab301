@@ -448,6 +448,58 @@
     {
       "time": "15:13:09",
       "action": "staged write Lottery-App/frontend/src/App.tsx"
+    },
+    {
+      "time": "15:15:53",
+      "action": "staged write Lottery-App/frontend/src/routes/routeConfig.tsx"
+    },
+    {
+      "time": "15:19:54",
+      "action": "staged write Lottery-App/frontend/.env"
+    },
+    {
+      "time": "15:19:57",
+      "action": "staged write Lottery-App/frontend/.env.example"
+    },
+    {
+      "time": "15:19:59",
+      "action": "staged write Lottery-App/frontend/src/api/apiClient.ts"
+    },
+    {
+      "time": "15:25:13",
+      "action": "staged write Lottery-App/frontend/src/components/layout/Header.tsx"
+    },
+    {
+      "time": "15:25:14",
+      "action": "staged write Lottery-App/frontend/src/components/layout/Sidebar.tsx"
+    },
+    {
+      "time": "15:26:04",
+      "action": "staged write Lottery-App/frontend/src/components/layout/DashboardLayout.tsx"
+    },
+    {
+      "time": "15:26:59",
+      "action": "staged write Lottery-App/frontend/src/components/layout/PublicHeader.tsx"
+    },
+    {
+      "time": "15:27:00",
+      "action": "staged write Lottery-App/frontend/src/routes/routeConfig.tsx"
+    },
+    {
+      "time": "15:27:01",
+      "action": "staged write Lottery-App/frontend/src/routes/routeConfig.tsx"
+    },
+    {
+      "time": "15:27:03",
+      "action": "staged write Lottery-App/frontend/src/routes/routeConfig.tsx"
+    },
+    {
+      "time": "15:32:19",
+      "action": "staged write Lottery-App/frontend/.env"
+    },
+    {
+      "time": "15:37:23",
+      "action": "staged write Lottery-App/frontend/src/utils/facebookOAuth.ts"
     }
   ],
   "last_message": "",

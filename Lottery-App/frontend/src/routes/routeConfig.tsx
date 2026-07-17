@@ -8,10 +8,10 @@ export interface RouteConfig {
 }
 
 // Lazy imports to keep config clean
-import AuthPage from '../pages/public/AuthPage';
-import LotteryCheck from '../pages/public/LotteryCheck';
-import Profile from '../pages/user/Profile';
-import HistoryAnalytics from '../pages/user/HistoryAnalytics';
+import AuthPage from '../pages/auth/AuthPage';
+import LotteryCheck from '../pages/lottery/LotteryCheck';
+import Profile from '../pages/profile/Profile';
+import HistoryAnalytics from '../pages/history/HistoryAnalytics';
 import ManageUsers from '../pages/admin/ManageUsers';
 import ManageTickets from '../pages/admin/ManageTickets';
 import DashboardLayout from '../components/layout/DashboardLayout';
