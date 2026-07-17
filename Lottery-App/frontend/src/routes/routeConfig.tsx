@@ -15,16 +15,16 @@ import HistoryAnalytics from '../pages/user/HistoryAnalytics';
 import ManageUsers from '../pages/admin/ManageUsers';
 import ManageTickets from '../pages/admin/ManageTickets';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import Navbar from '../components/layout/Navbar';
+import PublicHeader from '../components/layout/PublicHeader';
 
 const routeConfig: RouteConfig[] = [
   {
     path: '/auth',
-    element: <><Navbar /><AuthPage /></>,
+    element: <><PublicHeader /><AuthPage /></>,
   },
   {
     path: '/lottery',
-    element: <><Navbar /><LotteryCheck /></>,
+    element: <><PublicHeader /><LotteryCheck /></>,
   },
   {
     path: '/account',
