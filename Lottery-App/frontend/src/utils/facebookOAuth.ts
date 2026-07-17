@@ -7,7 +7,7 @@ const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
 export function loginWithFacebookPopup(): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!FACEBOOK_APP_ID) {
-      reject(new Error('Facebook App ID is not configured'));
+      reject(new Error('Facebook login not available'));
       return;
     }
 
