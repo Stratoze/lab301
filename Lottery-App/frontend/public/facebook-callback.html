@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Facebook OAuth Callback</title></head>
+<body>
+<script>
+  // Extract access_token from URL hash (#access_token=...&...)
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  const accessToken = params.get('access_token');
+  if (accessToken && window.opener) {
+    window.opener.postMessage({ provider: 'FACEBOOK', token: accessToken }, window.location.origin);
+    window.close();
+  } else {
+    document.body.innerText = 'Authentication failed. Please close this window and try again.';
+  }
+</script>
+</body>
+</html>

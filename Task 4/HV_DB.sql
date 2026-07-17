@@ -1,14 +1,14 @@
 -- =================================================================================
--- PROJECT: DÒ VÉ SỐ (LOTTERY CHECKER) - FINAL DATABASE SCRIPT
--- Cấu hình: MySQL 8.x / 9.x
+-- PROJECT: DÒ VÉ SỐ (LOTTERY CHECKER) - FRESH DATABASE SCRIPT (SRS-COMPLIANT)
+-- Fixes applied: total_queries BIGINT, UNIQUE constraint prize_details, indexes
 -- =================================================================================
 
-CREATE DATABASE IF NOT EXISTS lottery_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS lottery_db;
+CREATE DATABASE lottery_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE lottery_db;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- XÓA BẢNG CŨ ĐỂ KHỞI TẠO MỚI HOÀN TOÀN
 DROP TABLE IF EXISTS check_histories;
 DROP TABLE IF EXISTS check_sessions;
 DROP TABLE IF EXISTS prize_details;
@@ -68,7 +68,7 @@ CREATE TABLE lottery_results (
     station_id INT NOT NULL,
     draw_date DATE NOT NULL,
     status VARCHAR(20) DEFAULT 'UNPUBLISH',
-    total_queries INT DEFAULT 0,
+    total_queries BIGINT DEFAULT 0,                 -- FIX: BIGINT instead of INT
     created_by BIGINT,
     published_by BIGINT,
     published_at DATETIME,
@@ -77,7 +77,9 @@ CREATE TABLE lottery_results (
     FOREIGN KEY (station_id) REFERENCES lottery_stations(id),
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (published_by) REFERENCES users(id),
-    UNIQUE KEY unique_idx_station_date (station_id, draw_date)
+    UNIQUE KEY unique_idx_station_date (station_id, draw_date),
+    INDEX idx_draw_date (draw_date),                -- NEW INDEX
+    INDEX idx_status (status)                       -- NEW INDEX
 );
 
 CREATE TABLE prize_details (
@@ -86,7 +88,8 @@ CREATE TABLE prize_details (
     prize_type VARCHAR(20) NOT NULL,
     winning_number VARCHAR(10) NOT NULL,
     reward_amount BIGINT NOT NULL, -- VND
-    FOREIGN KEY (result_id) REFERENCES lottery_results(id) ON DELETE CASCADE
+    FOREIGN KEY (result_id) REFERENCES lottery_results(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_idx_result_prize_number (result_id, prize_type, winning_number)  -- NEW UNIQUE
 );
 
 CREATE TABLE check_sessions (
@@ -117,8 +120,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 2. DỮ LIỆU MẪU (DML) - TỐI THIỂU 15 BẢN GHI MỖI BẢNG
 -- =================================================================================
 
--- Pwd: 'phucddfx03285' | BCrypt Cost: 12 vòng ($12$)
-SET @pwd = '$2a$12$dffPiK9Yj5Ji6f8MN3wh.co0b9.4F7x/6MmD3Ev1Hwbj47Pa6Jz6';
+-- Pwd: 'phucpddfx03285' | BCrypt Cost: 12 vòng ($12$)
+SET @pwd = '$2a$12$Jf6a0eHS/vrrMvw3Psy.nOzOxT8uVrPd6Gp.uO90M11c8vjIH5o32';
 
 -- BẢNG 1: USERS (15 records)
 INSERT INTO users (user_code, email, phone, password, full_name, role, is_active) VALUES
@@ -168,7 +171,7 @@ INSERT INTO lottery_stations (station_code, name, region) VALUES
 ('SOU-DN', 'Đồng Nai', 'SOUTH'), ('SOU-CT', 'Cần Thơ', 'SOUTH'),
 ('SOU-ST', 'Sóc Trăng', 'SOUTH');
 
--- BẢNG 5: LOTTERY RESULTS (15 records)
+-- BẢNG 5: LOTTERY RESULTS (15 records) — result_code matches new format RES-XXX-DDMMYYYY
 INSERT INTO lottery_results (result_code, station_id, draw_date, status, total_queries, created_by, published_by, published_at) VALUES
 ('RES-HCM-23102023', 1, '2023-10-23', 'PUBLISH', 150, 1, 1, '2023-10-23 16:30:00'),
 ('RES-DT-23102023', 2, '2023-10-23', 'PUBLISH', 80, 1, 2, '2023-10-23 16:30:00'),
@@ -186,7 +189,7 @@ INSERT INTO lottery_results (result_code, station_id, draw_date, status, total_q
 ('RES-CT-01112023', 14, '2023-11-01', 'PUBLISH', 99, 1, 1, '2023-11-01 16:30:00'),
 ('RES-ST-01112023', 15, '2023-11-01', 'UNPUBLISH', 0, 2, NULL, NULL);
 
--- BẢNG 6: PRIZE DETAILS (18 records - Ví dụ cho đài HCM ngày 23/10)
+-- BẢNG 6: PRIZE DETAILS (18 records)
 INSERT INTO prize_details (result_id, prize_type, winning_number, reward_amount) VALUES
 (1, 'G8', '85', 100000), (1, 'G7', '763', 200000), (1, 'G6', '1234', 400000),
 (1, 'G6', '5678', 400000), (1, 'G6', '9012', 400000), (1, 'G5', '5555', 1000000),
@@ -205,8 +208,8 @@ INSERT INTO check_sessions (user_id, total_spent, total_won) VALUES
 
 -- BẢNG 8: CHECK HISTORIES (15 records)
 INSERT INTO check_histories (session_id, result_id, ticket_number, is_won, won_prize, won_amount) VALUES
-(1, 1, '123485', 1, 'G8', 100000), (1, 1, '000000', 0, NULL, 0), -- Session 1
-(2, 1, '111111', 0, NULL, 0), (4, 1, '999999', 1, 'G_DB', 2000000000), -- Thắng ĐB
+(1, 1, '123485', 1, 'G8', 100000), (1, 1, '000000', 0, NULL, 0),
+(2, 1, '111111', 0, NULL, 0), (4, 1, '999999', 1, 'G_DB', 2000000000),
 (5, 1, '123456', 0, NULL, 0), (5, 1, '005678', 1, 'G6', 400000),
 (6, 4, '000000', 0, NULL, 0), (6, 4, '111111', 0, NULL, 0), (6, 4, '222222', 0, NULL, 0),
 (8, 10, '12345', 1, 'G_DB', 500000000), -- Khách vãng lai thắng miền bắc
