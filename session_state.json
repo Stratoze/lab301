@@ -436,6 +436,18 @@
     {
       "time": "14:31:11",
       "action": "staged write Lottery-App/frontend/src/pages/user/components/ProfileDetails.tsx"
+    },
+    {
+      "time": "15:11:45",
+      "action": "staged write Lottery-App/frontend/src/components/ProtectedRoute.tsx"
+    },
+    {
+      "time": "15:12:42",
+      "action": "staged write Lottery-App/frontend/src/routes/routeConfig.tsx"
+    },
+    {
+      "time": "15:13:09",
+      "action": "staged write Lottery-App/frontend/src/App.tsx"
     }
   ],
   "last_message": "",
