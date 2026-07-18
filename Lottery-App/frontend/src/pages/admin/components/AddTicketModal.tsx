@@ -111,7 +111,7 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
       centered
       width={700}
       zIndex={1100}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
         <div style={{ display: 'flex', gap: 16 }}>

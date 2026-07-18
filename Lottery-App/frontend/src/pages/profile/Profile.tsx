@@ -152,7 +152,7 @@ const Profile: React.FC = () => {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <Card title="My Profile" style={{ borderRadius: 12 }}>
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <div>
             <Text type="secondary">User Code</Text>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -285,7 +285,7 @@ const Profile: React.FC = () => {
         onCancel={() => setIsEditNameOpen(false)}
         onOk={() => form.submit()}
         confirmLoading={loading}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleUpdateName} initialValues={{ fullName: user.fullName }}>
           <Form.Item name="fullName" label="New Full Name" rules={[{ required: true, message: 'Full name is required' }]}>
@@ -342,7 +342,7 @@ const Profile: React.FC = () => {
         onCancel={() => setIsPhoneModalOpen(false)}
         onOk={() => phoneForm.submit()}
         confirmLoading={loading}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={phoneForm} layout="vertical" onFinish={handleUpdatePhone}>
           <Form.Item

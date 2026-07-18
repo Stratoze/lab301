@@ -51,7 +51,7 @@ const HistoryAnalytics: React.FC = () => {
   const hasHistory = history.length > 0 || chartData.length > 0;
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
+    <Space orientation="vertical" style={{ width: '100%' }} size="large">
       <Spin spinning={loading}>
         {!hasHistory && !loading ? (
           <Card style={{ borderRadius: 12, textAlign: 'center', padding: '60px 0' }}>

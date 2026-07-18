@@ -313,7 +313,7 @@ const ManageUsers: React.FC = () => {
         {loading ? (
           <Skeleton active paragraph={{ rows: 4 }} />
         ) : (
-          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+          <Space orientation="vertical" size={16} style={{ width: '100%' }}>
             {data.map((user: any) => {
               const isSelected = mobileSelectedIds.includes(user.id);
               return (
@@ -445,7 +445,7 @@ const ManageUsers: React.FC = () => {
         </Form>
       </Modal>
 
-      <Modal title="Send Email" open={isEmailModalOpen} onCancel={() => setIsEmailModalOpen(false)} onOk={() => emailForm.submit()} destroyOnClose zIndex={1100}>
+      <Modal title="Send Email" open={isEmailModalOpen} onCancel={() => setIsEmailModalOpen(false)} onOk={() => emailForm.submit()} destroyOnHidden zIndex={1100}>
         <Form form={emailForm} layout="vertical" onFinish={handleSendEmail}>
           <Text type="secondary">To: {mobileSelectedIds.length > 0 ? mobileSelectedIds.length : selectedRowKeys.length} selected users</Text>
           <Form.Item name="subject" label="Subject" rules={[{ required: true }]} style={{ marginTop: 16 }}>
@@ -457,7 +457,7 @@ const ManageUsers: React.FC = () => {
         </Form>
       </Modal>
 
-      <Modal title="Add New User" open={isAddModalOpen} onCancel={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} footer={null} destroyOnClose zIndex={1100}>
+      <Modal title="Add New User" open={isAddModalOpen} onCancel={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} footer={null} destroyOnHidden zIndex={1100}>
         <Form form={addUserForm} layout="vertical" onFinish={handleAddUser}>
           <Form.Item name="fullName" label="Full Name" rules={[{ required: true, message: 'Please enter full name' }]}>
             <Input placeholder="Nguyen Van A" style={{ borderRadius: 8 }} />

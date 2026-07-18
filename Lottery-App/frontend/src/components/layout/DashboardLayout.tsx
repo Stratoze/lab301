@@ -73,11 +73,10 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
         closable={true}
         onClose={() => setMobileOpen(false)}
         open={mobileOpen}
-        width="100%"
         styles={{
           body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
+          mask: { background: 'rgba(0,0,0,0.45)' },
         }}
-        maskStyle={{ background: 'rgba(0,0,0,0.45)' }}
       >
         <Menu
           mode="inline"
