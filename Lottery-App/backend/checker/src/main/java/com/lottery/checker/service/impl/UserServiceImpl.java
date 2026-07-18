@@ -163,8 +163,18 @@ class UserServiceImpl implements UserService {
     public void changePassword(String email, String oldPassword, String newPassword) {
         User user = findByEmail(email);
         
-        if (user.getPassword() == null || !passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+        boolean isSettingInitialPassword = (user.getPassword() == null);
+        
+        if (isSettingInitialPassword) {
+            // Social user setting password for the first time: no old password required
+            if (oldPassword != null && !oldPassword.isBlank()) {
+                throw new RuntimeException("Account has no password set. Leave current password empty to set a new one.");
+            }
+        } else {
+            // Existing password user: must provide correct current password
+            if (oldPassword == null || !passwordEncoder.matches(oldPassword, user.getPassword())) {
+                throw new RuntimeException("Current password is incorrect");
+            }
         }
 
         // Validate new password using same rules as registration
@@ -221,6 +231,7 @@ class UserServiceImpl implements UserService {
             providers.stream().anyMatch(p -> "GOOGLE".equals(p.getProvider())),
             providers.stream().anyMatch(p -> "FACEBOOK".equals(p.getProvider())),
             user.getPhone(),
+            user.getPassword() != null,
             providers.stream()
                 .map(p -> new LinkedAccountsResponse.LinkedProvider(p.getProvider(), p.getProviderId()))
                 .toList()

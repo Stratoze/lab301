@@ -43,9 +43,9 @@ public class AuthController {
     @GetMapping("/password-rules")
     public ResponseEntity<ApiResponse<PasswordRulesResponse>> getPasswordRules() {
         PasswordRulesResponse rules = new PasswordRulesResponse(
-                com.lottery.checker.validation.PasswordValidator.MIN_LENGTH,
-                com.lottery.checker.validation.PasswordValidator.MAX_LENGTH,
-                com.lottery.checker.validation.PasswordValidator.BLOCKLIST
+                com.lottery.checker.validation.PasswordRulesHolder.getMinLength(),
+                com.lottery.checker.validation.PasswordRulesHolder.getMaxLength(),
+                com.lottery.checker.validation.PasswordRulesHolder.getBlocklist()
         );
         return ResponseEntity.ok(ApiResponse.success(rules));
     }

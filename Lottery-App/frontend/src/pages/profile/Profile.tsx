@@ -1,36 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Typography, Button, Space, Divider, message, Modal, Form, Input, Progress, Tag, Row, Col } from 'antd';
+import { Card, Typography, Button, Space, Divider, message, Modal, Form, Input, Tag, Row, Col } from 'antd';
 import { CopyOutlined, EditOutlined, LockOutlined, LinkOutlined, DisconnectOutlined, GoogleOutlined, FacebookFilled, PhoneOutlined } from '@ant-design/icons';
 import { GoogleLogin } from '@react-oauth/google';
 import { loginWithFacebookPopup } from '../../utils/facebookOAuth';
 import apiClient from '../../api/apiClient';
+import PasswordField from '../../components/PasswordField';
 
 const { Text } = Typography;
-
-const getPasswordStrength = (password: string): { percent: number; status: 'exception' | 'active' | 'success'; label: string } => {
-  if (!password) return { percent: 0, status: 'exception', label: '' };
-  if (password.length < 10) {
-    return { percent: Math.min((password.length / 10) * 30, 30), status: 'exception', label: 'Too short (min 10 characters)' };
-  }
-  let score = 40;
-  if (password.length >= 12) score += 10;
-  if (password.length >= 16) score += 10;
-  if (/[A-Z]/.test(password)) score += 15;
-  if (/[a-z]/.test(password)) score += 5;
-  if (/[0-9]/.test(password)) score += 10;
-  if (/[^A-Za-z0-9]/.test(password)) score += 10;
-  const percent = Math.min(score, 100);
-  if (percent >= 80) return { percent, status: 'success', label: 'Strong' };
-  if (percent >= 50) return { percent, status: 'active', label: 'Medium' };
-  return { percent, status: 'exception', label: 'Weak' };
-};
 
 const Profile: React.FC = () => {
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
   const [form] = Form.useForm();
   const [passForm] = Form.useForm();
   const [phoneForm] = Form.useForm();
@@ -44,7 +26,8 @@ const Profile: React.FC = () => {
   const [linkedAccounts, setLinkedAccounts] = useState({
     googleLinked: false,
     facebookLinked: false,
-    phone: null as string | null
+    phone: null as string | null,
+    hasPassword: true,
   });
 
   const fetchLinkedAccounts = useCallback(async () => {
@@ -90,12 +73,14 @@ const Profile: React.FC = () => {
     setLoading(true);
     try {
       await apiClient.post('/user/change-password', {
-        oldPassword: values.oldPassword,
+        oldPassword: linkedAccounts.hasPassword ? values.oldPassword : '',
         newPassword: values.newPassword
       });
       message.success('Password changed successfully!');
       setIsPassModalOpen(false);
       passForm.resetFields();
+      // Refresh to update hasPassword status
+      fetchLinkedAccounts();
     } catch (e: any) {
       const msg = e.response?.data?.message || 'Failed to change password. Check your current password.';
       message.error(msg);
@@ -154,8 +139,6 @@ const Profile: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const strength = getPasswordStrength(newPassword);
 
   const handlePassModalOk = async () => {
     try {
@@ -290,7 +273,7 @@ const Profile: React.FC = () => {
           <Divider />
 
           <Button block onClick={() => setIsPassModalOpen(true)} style={{ borderRadius: 12 }}>
-            Change my password
+            {linkedAccounts.hasPassword ? 'Change my password' : 'Set a password'}
           </Button>
         </Space>
       </Card>
@@ -311,49 +294,26 @@ const Profile: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Change Password Modal */}
+      {/* Change / Set Password Modal */}
       <Modal
-        title="Change Password"
+        title={linkedAccounts.hasPassword ? 'Change Password' : 'Set a Password'}
         open={isPassModalOpen}
         onCancel={() => setIsPassModalOpen(false)}
         onOk={handlePassModalOk}
         confirmLoading={loading}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={passForm} layout="vertical">
-          <Form.Item
-            name="oldPassword"
-            label="Enter Your Current Password"
-            rules={[{ required: true, message: 'Current password is required' }]}
-          >
-            <Input.Password prefix={<LockOutlined />} style={{ borderRadius: 2 }} />
-          </Form.Item>
-          <Form.Item
-            name="newPassword"
-            label="Enter Your New Password"
-            rules={[
-              { required: true, message: 'New password is required' },
-              { min: 10, message: 'Password must be at least 10 characters' }
-            ]}
-            extra={
-              newPassword && (
-                <div style={{ marginTop: 4 }}>
-                  <Progress
-                    percent={strength.percent}
-                    status={strength.status}
-                    size="small"
-                    format={() => strength.label}
-                  />
-                </div>
-              )
-            }
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              style={{ borderRadius: 2 }}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </Form.Item>
+          {linkedAccounts.hasPassword && (
+            <Form.Item
+              name="oldPassword"
+              label="Enter Your Current Password"
+              rules={[{ required: true, message: 'Current password is required' }]}
+            >
+              <Input.Password prefix={<LockOutlined />} style={{ borderRadius: 2 }} />
+            </Form.Item>
+          )}
+          <PasswordField name="newPassword" label="New Password" />
           <Form.Item
             name="confirmPassword"
             label="Confirm your new password"
