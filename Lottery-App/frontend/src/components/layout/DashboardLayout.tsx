@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, Button, Drawer, Menu } from 'antd';
-import { MenuOutlined, MenuFoldOutlined } from '@ant-design/icons';
+import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -22,11 +22,6 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
     navigate('/auth');
   };
 
-  const handleNavigate = (key: string) => {
-    navigate(key);
-    setMobileOpen(false);
-  };
-
   const menuItems = [
     { key: '/account', icon: <></>, label: 'Account' },
     { key: '/history', icon: <></>, label: 'History & Analytics' },
@@ -39,22 +34,31 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header>
-        <Button
-          className="mobile-hamburger-btn"
-          type="text"
-          icon={mobileOpen ? <MenuFoldOutlined /> : <MenuOutlined />}
-          onClick={() => setMobileOpen(!mobileOpen)}
-        />
-      </Header>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div style={{ zIndex: 1001, position: 'relative' }}>
+        <Header>
+          <Button
+            className="mobile-hamburger-btn"
+            type="text"
+            icon={mobileOpen ? <CloseOutlined style={{ fontSize: '20px' }} /> : <MenuOutlined style={{ fontSize: '20px' }} />}
+            onClick={() => setMobileOpen(!mobileOpen)}
+          />
+        </Header>
+      </div>
 
-      <Layout>
+      <Layout 
+        id="sub-layout-container" 
+        style={{ flex: 1, overflow: 'hidden', position: 'relative', zIndex: 1 }}
+      >
         <Sider
           className="desktop-sider"
           theme="light"
           width={240}
-          style={{ boxShadow: '2px 0 8px rgba(0,0,0,0.03)' }}
+          style={{
+            boxShadow: '2px 0 8px rgba(0,0,0,0.03)',
+            overflowY: 'auto',
+            height: '100%',
+          }}
         >
           <Sidebar
             selectedKeys={[location.pathname]}
@@ -64,47 +68,55 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
           />
         </Sider>
 
-        <Content style={{ margin: '24px', minHeight: 280 }}>{children}</Content>
-      </Layout>
+        <Content style={{ margin: '24px', overflowY: 'auto', height: '100%' }}>
+          {children}
+        </Content>
 
-      <Drawer
-        title={null}
-        placement="left"
-        closable={true}
-        onClose={() => setMobileOpen(false)}
-        open={mobileOpen}
-        styles={{
-          body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
-          mask: { background: 'rgba(0,0,0,0.45)' },
-        }}
-      >
-        <Menu
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => handleNavigate(key)}
-          style={{ flex: 1, borderRight: 0 }}
-        />
-        <div
-          style={{
-            padding: '12px 16px',
-            borderTop: '1px solid #f0f0f0',
+        <Drawer
+          title={null}
+          placement="left"
+          closable={false}
+          mask={false}
+          onClose={() => setMobileOpen(false)}
+          open={mobileOpen}
+          getContainer={() => document.getElementById('sub-layout-container') || document.body}
+          style={{ position: 'absolute', zIndex: 1000 }}
+          width="100%"
+          styles={{
+            body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
           }}
         >
-          <Button
-            type="text"
-            icon={<MenuFoldOutlined />}
-            onClick={() => {
-              handleLogout();
+          <Menu
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            onClick={({ key }) => {
+              navigate(key);
               setMobileOpen(false);
             }}
-            style={{ color: '#ff4d4f', borderRadius: 8 }}
-            block
+            /* Added paddingTop: '64px' here to offset the header height */
+            style={{ flex: 1, borderRight: 0, paddingTop: '64px' }}
+          />
+          <div
+            style={{
+              padding: '12px 16px',
+              borderTop: '1px solid #f0f0f0',
+            }}
           >
-            Logout
-          </Button>
-        </div>
-      </Drawer>
+            <Button
+              type="text"
+              onClick={() => {
+                handleLogout();
+                setMobileOpen(false);
+              }}
+              style={{ color: '#ff4d4f', borderRadius: 8, textAlign: 'left' }}
+              block
+            >
+              Logout
+            </Button>
+          </div>
+        </Drawer>
+      </Layout>
 
       <style>{`
         .mobile-hamburger-btn { display: none !important; }
@@ -113,14 +125,8 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
           .desktop-sider        { display: none !important; }
           .mobile-hamburger-btn { display: inline-flex !important; }
         }
-
-        .ant-layout-header {
-          z-index: 1001 !important;
-          position: sticky !important;
-          top: 0 !important;
-        }
       `}</style>
-    </Layout>
+    </div>
   );
 };
 
