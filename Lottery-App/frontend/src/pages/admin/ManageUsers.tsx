@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Table, Card, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton } from 'antd';
 import { EditOutlined, MailOutlined, DownOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserOutlined, StopOutlined, SearchOutlined, CheckCircleFilled, CloseCircleFilled, MailFilled, InfoCircleFilled, SendOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
+import DashboardCard from '../../components/DashboardCard';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const ManageUsers: React.FC = () => {
   const [data, setData] = useState([]);
@@ -205,45 +206,95 @@ const ManageUsers: React.FC = () => {
     ],
   };
 
+  const desktopControls = (
+    <Space>
+      <Select
+        placeholder="Last login"
+        value={loginFilter}
+        onChange={(value) => {
+          setLoginFilter(value);
+          fetchUsers();
+        }}
+        allowClear
+        style={{ width: 160 }}
+        options={[
+          { value: '24h', label: 'Within 24 hours' },
+          { value: '1m', label: 'Within 1 month' },
+          { value: '3m', label: 'Within 3 months' },
+          { value: '6m', label: 'Within 6 months' },
+          { value: '1y', label: 'Within 1 year' },
+        ]}
+      />
+      <Input.Search 
+        placeholder="email/phone/usercode" 
+        onSearch={fetchUsers} 
+        style={{ width: 250, borderRadius: 2 }} 
+      />
+      <Dropdown menu={bulkMenu} disabled={selectedRowKeys.length === 0}>
+        <Button style={{ borderRadius: 12 }}>
+          Actions <DownOutlined />
+        </Button>
+      </Dropdown>
+    </Space>
+  );
+
+  const mobileControls = (
+    <>
+      <Input
+        placeholder="input search text"
+        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+        onChange={(e) => fetchUsers(e.target.value)}
+        allowClear
+        style={{ borderRadius: 8 }}
+      />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button
+          type={isBulkMode ? 'primary' : 'default'}
+          onClick={() => {
+            setIsBulkMode(!isBulkMode);
+            setMobileSelectedIds([]);
+          }}
+          style={{ flex: 1, borderRadius: 20 }}
+        >
+          Bulk Action
+        </Button>
+        <Button
+          type="default"
+          onClick={() => {
+            addUserForm.resetFields();
+            setIsAddModalOpen(true);
+          }}
+          style={{ flex: 1, borderRadius: 20 }}
+        >
+          Add New
+        </Button>
+      </div>
+      <Select
+        placeholder="Sort By"
+        value={sortBy}
+        onChange={(value) => setSortBy(value)}
+        suffixIcon={<DownOutlined />}
+        style={{ width: '100%', borderRadius: 8 }}
+        allowClear
+        options={[
+          { value: 'name_asc', label: 'Name A-Z' },
+          { value: 'name_desc', label: 'Name Z-A' },
+          { value: 'role', label: 'Role' },
+          { value: 'last_login', label: 'Last Login' },
+        ]}
+      />
+    </>
+  );
+
   return (
     <div>
-      {/* Desktop Header Controls (hidden on mobile) */}
-      <div className="desktop-controls" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <Title level={4} style={{ margin: 0 }}>Manage User</Title>
-        <Space>
-          <Select
-            placeholder="Last login"
-            value={loginFilter}
-            onChange={(value) => {
-              setLoginFilter(value);
-              fetchUsers();
-            }}
-            allowClear
-            style={{ width: 160 }}
-            options={[
-              { value: '24h', label: 'Within 24 hours' },
-              { value: '1m', label: 'Within 1 month' },
-              { value: '3m', label: 'Within 3 months' },
-              { value: '6m', label: 'Within 6 months' },
-              { value: '1y', label: 'Within 1 year' },
-            ]}
-          />
-          <Input.Search 
-            placeholder="email/phone/usercode" 
-            onSearch={fetchUsers} 
-            style={{ width: 250, borderRadius: 2 }} 
-          />
-          <Dropdown menu={bulkMenu} disabled={selectedRowKeys.length === 0}>
-            <Button style={{ borderRadius: 12 }}>
-              Actions <DownOutlined />
-            </Button>
-          </Dropdown>
-        </Space>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="desktop-view">
-        <Card style={{ borderRadius: 12 }}>
+      <DashboardCard
+        title="Manage User"
+        desktopControls={desktopControls}
+        mobileControls={mobileControls}
+      >
+        {/* Desktop Table */}
+        <div className="desktop-view">
           {loading && data.length === 0 ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
@@ -257,134 +308,86 @@ const ManageUsers: React.FC = () => {
               locale={{ emptyText: 'No users found' }}
             />
           )}
-        </Card>
-      </div>
-
-      {/* Mobile View */}
-      <div className="mobile-view">
-        <Title level={4} style={{ margin: 0, marginBottom: 16 }}>Manage User</Title>
-
-        <Input
-          placeholder="input search text"
-          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-          onChange={(e) => fetchUsers(e.target.value)}
-          allowClear
-          style={{ marginBottom: 12, borderRadius: 8 }}
-        />
-
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <Button
-            type={isBulkMode ? 'primary' : 'default'}
-            onClick={() => {
-              setIsBulkMode(!isBulkMode);
-              setMobileSelectedIds([]);
-            }}
-            style={{ flex: 1, borderRadius: 20 }}
-          >
-            Bulk Action
-          </Button>
-          <Button
-            type="default"
-            onClick={() => {
-              addUserForm.resetFields();
-              setIsAddModalOpen(true);
-            }}
-            style={{ flex: 1, borderRadius: 20 }}
-          >
-            Add New
-          </Button>
         </div>
 
-        <Select
-          placeholder="Sort By"
-          value={sortBy}
-          onChange={(value) => setSortBy(value)}
-          suffixIcon={<DownOutlined />}
-          style={{ width: '100%', marginBottom: 16 }}
-          allowClear
-          options={[
-            { value: 'name_asc', label: 'Name A-Z' },
-            { value: 'name_desc', label: 'Name Z-A' },
-            { value: 'role', label: 'Role' },
-            { value: 'last_login', label: 'Last Login' },
-          ]}
-        />
-
-        {loading ? (
-          <Skeleton active paragraph={{ rows: 4 }} />
-        ) : (
-          <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-            {data.map((user: any) => {
-              const isSelected = mobileSelectedIds.includes(user.id);
-              return (
-                <Card
-                  key={user.id}
-                  onClick={() => {
-                    if (!isBulkMode) return;
-                    if (isSelected) {
-                      setMobileSelectedIds(mobileSelectedIds.filter(id => id !== user.id));
-                    } else {
-                      setMobileSelectedIds([...mobileSelectedIds, user.id]);
+        {/* Mobile Cards */}
+        <div className="mobile-view">
+          {loading ? (
+            <Skeleton active paragraph={{ rows: 4 }} />
+          ) : (
+            <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+              {data.map((user: any) => {
+                const isSelected = mobileSelectedIds.includes(user.id);
+                return (
+                  <Card
+                    key={user.id}
+                    onClick={() => {
+                      if (!isBulkMode) return;
+                      if (isSelected) {
+                        setMobileSelectedIds(mobileSelectedIds.filter(id => id !== user.id));
+                      } else {
+                        setMobileSelectedIds([...mobileSelectedIds, user.id]);
+                      }
+                    }}
+                    style={{
+                      borderRadius: 12,
+                      border: isBulkMode && isSelected ? '1px solid #1677ff' : '1px solid #f0f0f0',
+                      background: isBulkMode && isSelected ? '#e6f4ff' : '#ffffff',
+                      boxShadow: 'none',
+                      cursor: isBulkMode ? 'pointer' : 'default',
+                      transition: 'all 0.2s',
+                    }}
+                    styles={{ body: { padding: 16 } }}
+                    actions={
+                      isBulkMode
+                        ? undefined
+                        : [
+                            <SendOutlined key="send" onClick={(e) => { e.stopPropagation(); message.info('Email feature coming soon'); }} />,
+                            <EditOutlined key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(user); }} />,
+                          ]
                     }
-                  }}
-                  style={{
-                    borderRadius: 12,
-                    border: isBulkMode && isSelected ? '1px solid #1677ff' : '1px solid #f0f0f0',
-                    background: isBulkMode && isSelected ? '#e6f4ff' : '#ffffff',
-                    boxShadow: 'none',
-                    cursor: isBulkMode ? 'pointer' : 'default',
-                    transition: 'all 0.2s',
-                  }}
-                  styles={{ body: { padding: 16 } }}
-                  actions={
-                    isBulkMode
-                      ? undefined
-                      : [
-                          <SendOutlined key="send" onClick={(e) => { e.stopPropagation(); message.info('Email feature coming soon'); }} />,
-                          <EditOutlined key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(user); }} />,
-                        ]
-                  }
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <Text strong style={{ fontSize: 15 }}>{user.fullName}</Text>
-                    <Space size={4} wrap>
-                      {user.isActive ? (
-                        <Tag color="success" style={{ borderRadius: 20 }}>Active</Tag>
-                      ) : (
-                        <Tag color="error" style={{ borderRadius: 20 }}>BLOCKED</Tag>
-                      )}
-                      {user.role === 'ROLE_ADMIN' ? (
-                        <Tag color="purple" style={{ borderRadius: 20 }}>ADMIN</Tag>
-                      ) : (
-                        <Tag color="processing" style={{ borderRadius: 20 }}>USER</Tag>
-                      )}
-                    </Space>
-                  </div>
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <Text strong style={{ fontSize: 15 }}>{user.fullName}</Text>
+                      <Space size={4} wrap>
+                        {user.isActive ? (
+                          <Tag color="success" style={{ borderRadius: 20 }}>Active</Tag>
+                        ) : (
+                          <Tag color="error" style={{ borderRadius: 20 }}>BLOCKED</Tag>
+                        )}
+                        {user.role === 'ROLE_ADMIN' ? (
+                          <Tag color="purple" style={{ borderRadius: 20 }}>ADMIN</Tag>
+                        ) : (
+                          <Tag color="processing" style={{ borderRadius: 20 }}>USER</Tag>
+                        )}
+                      </Space>
+                    </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <MailOutlined style={{ color: '#1677ff' }} />
-                      <Text style={{ color: '#595959' }}>Email: {user.email}</Text>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <MailOutlined style={{ color: '#1677ff' }} />
+                        <Text style={{ color: '#595959' }}>Email: {user.email}</Text>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <ClockCircleOutlined style={{ color: '#1677ff' }} />
+                        <Text style={{ color: '#595959' }}>
+                          Last Login: {user.lastLogin
+                            ? new Date(user.lastLogin).toLocaleString('vi-VN', { hour12: false })
+                            : 'N/A'}
+                        </Text>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UserOutlined style={{ color: '#1677ff' }} />
+                        <Text style={{ color: '#595959' }}>User Code: {user.userCode}</Text>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <ClockCircleOutlined style={{ color: '#1677ff' }} />
-                      <Text style={{ color: '#595959' }}>
-                        Last Login: {user.lastLogin
-                          ? new Date(user.lastLogin).toLocaleString('vi-VN', { hour12: false })
-                          : 'N/A'}
-                      </Text>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <UserOutlined style={{ color: '#1677ff' }} />
-                      <Text style={{ color: '#595959' }}>User Code: {user.userCode}</Text>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </Space>
-        )}
-      </div>
+                  </Card>
+                );
+              })}
+            </Space>
+          )}
+        </div>
+      </DashboardCard>
 
       {isBulkMode && (
         <div

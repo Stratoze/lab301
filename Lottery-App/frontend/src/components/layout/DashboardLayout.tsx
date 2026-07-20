@@ -23,12 +23,12 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
   };
 
   const menuItems = [
-    { key: '/account', icon: <></>, label: 'Account' },
-    { key: '/history', icon: <></>, label: 'History & Analytics' },
+    { key: '/account', icon: <span />, label: 'Account' },
+    { key: '/history', icon: <span />, label: 'History & Analytics' },
     ...(role === 'ROLE_ADMIN'
       ? [
-          { key: '/admin/users', icon: <></>, label: 'Manage Users' },
-          { key: '/admin/tickets', icon: <></>, label: 'Manage Tickets' },
+          { key: '/admin/users', icon: <span />, label: 'Manage Users' },
+          { key: '/admin/tickets', icon: <span />, label: 'Manage Tickets' },
         ]
       : []),
   ];
@@ -80,8 +80,7 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
           onClose={() => setMobileOpen(false)}
           open={mobileOpen}
           getContainer={() => document.getElementById('sub-layout-container') || document.body}
-          style={{ position: 'absolute', zIndex: 1000 }}
-          width="100%"
+          rootStyle={{ position: 'absolute', zIndex: 1000, width: '100%' }}
           styles={{
             body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
           }}

@@ -5,11 +5,20 @@ import apiClient from '../../api/apiClient';
 import AddTicketModal from './components/AddTicketModal';
 import DashboardCard from '../../components/DashboardCard';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
+interface TicketData {
+  id: number;
+  resultCode: string;
+  stationName: string;
+  drawDate: string;
+  status: string;
+  totalQueries: number;
+}
+
 const ManageTickets: React.FC = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(false);
   const [stations, setStations] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
