@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Card, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton } from 'antd';
-import { EditOutlined, MailOutlined, DownOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserOutlined, StopOutlined, SearchOutlined, CheckCircleFilled, CloseCircleFilled, MailFilled, InfoCircleFilled, SendOutlined } from '@ant-design/icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Table, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton } from 'antd';
+import { EditOutlined, DownOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserOutlined, StopOutlined, SearchOutlined, CheckCircleFilled, CloseCircleFilled, MailFilled, InfoCircleFilled, SendOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import DashboardCard from '../../components/DashboardCard';
+import CardList from '../../components/CardList';
+import UserCard from '../../components/UserCard';
 
 const { Text } = Typography;
 
@@ -40,6 +42,32 @@ const ManageUsers: React.FC = () => {
   };
 
   useEffect(() => { fetchUsers(); }, []);
+
+  const sortedUsers = useMemo(() => {
+    if (!sortBy) return data;
+    const arr = [...data];
+    switch (sortBy) {
+      case 'name_asc':
+        arr.sort((a: any, b: any) => (a.fullName || '').localeCompare(b.fullName || ''));
+        break;
+      case 'name_desc':
+        arr.sort((a: any, b: any) => (b.fullName || '').localeCompare(a.fullName || ''));
+        break;
+      case 'role':
+        arr.sort((a: any, b: any) => (a.role || '').localeCompare(b.role || ''));
+        break;
+      case 'last_login':
+        arr.sort((a: any, b: any) => {
+          const aTime = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
+          const bTime = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
+          return bTime - aTime;
+        });
+        break;
+      default:
+        break;
+    }
+    return arr;
+  }, [data, sortBy]);
 
   const handleBulkStatus = async (isActive: boolean) => {
     const ids = mobileSelectedIds.length > 0 ? mobileSelectedIds : selectedRowKeys;
@@ -312,80 +340,34 @@ const ManageUsers: React.FC = () => {
 
         {/* Mobile Cards */}
         <div className="mobile-view">
-          {loading ? (
-            <Skeleton active paragraph={{ rows: 4 }} />
-          ) : (
-            <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-              {data.map((user: any) => {
-                const isSelected = mobileSelectedIds.includes(user.id);
-                return (
-                  <Card
-                    key={user.id}
-                    onClick={() => {
-                      if (!isBulkMode) return;
-                      if (isSelected) {
-                        setMobileSelectedIds(mobileSelectedIds.filter(id => id !== user.id));
-                      } else {
-                        setMobileSelectedIds([...mobileSelectedIds, user.id]);
-                      }
-                    }}
-                    style={{
-                      borderRadius: 12,
-                      border: isBulkMode && isSelected ? '1px solid #1677ff' : '1px solid #f0f0f0',
-                      background: isBulkMode && isSelected ? '#e6f4ff' : '#ffffff',
-                      boxShadow: 'none',
-                      cursor: isBulkMode ? 'pointer' : 'default',
-                      transition: 'all 0.2s',
-                    }}
-                    styles={{ body: { padding: 16 } }}
-                    actions={
-                      isBulkMode
-                        ? undefined
-                        : [
-                            <SendOutlined key="send" onClick={(e) => { e.stopPropagation(); message.info('Email feature coming soon'); }} />,
-                            <EditOutlined key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(user); }} />,
-                          ]
-                    }
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <Text strong style={{ fontSize: 15 }}>{user.fullName}</Text>
-                      <Space size={4} wrap>
-                        {user.isActive ? (
-                          <Tag color="success" style={{ borderRadius: 20 }}>Active</Tag>
-                        ) : (
-                          <Tag color="error" style={{ borderRadius: 20 }}>BLOCKED</Tag>
-                        )}
-                        {user.role === 'ROLE_ADMIN' ? (
-                          <Tag color="purple" style={{ borderRadius: 20 }}>ADMIN</Tag>
-                        ) : (
-                          <Tag color="processing" style={{ borderRadius: 20 }}>USER</Tag>
-                        )}
-                      </Space>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <MailOutlined style={{ color: '#1677ff' }} />
-                        <Text style={{ color: '#595959' }}>Email: {user.email}</Text>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <ClockCircleOutlined style={{ color: '#1677ff' }} />
-                        <Text style={{ color: '#595959' }}>
-                          Last Login: {user.lastLogin
-                            ? new Date(user.lastLogin).toLocaleString('vi-VN', { hour12: false })
-                            : 'N/A'}
-                        </Text>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <UserOutlined style={{ color: '#1677ff' }} />
-                        <Text style={{ color: '#595959' }}>User Code: {user.userCode}</Text>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </Space>
-          )}
+          <CardList loading={loading}>
+            {sortedUsers.map((user: any) => {
+              const isSelected = mobileSelectedIds.includes(user.id);
+              return (
+                <UserCard
+                  key={user.id}
+                  user={user}
+                  selected={isBulkMode && isSelected}
+                  onClick={
+                    isBulkMode
+                      ? () => {
+                          if (isSelected) setMobileSelectedIds(mobileSelectedIds.filter(id => id !== user.id));
+                          else setMobileSelectedIds([...mobileSelectedIds, user.id]);
+                        }
+                      : undefined
+                  }
+                  actions={
+                    isBulkMode
+                      ? undefined
+                      : [
+                          <SendOutlined key="send" onClick={(e: any) => { e.stopPropagation(); message.info('Email feature coming soon'); }} />,
+                          <EditOutlined key="edit" onClick={(e: any) => { e.stopPropagation(); handleEdit(user); }} />,
+                        ]
+                  }
+                />
+              );
+            })}
+          </CardList>
         </div>
       </DashboardCard>
 

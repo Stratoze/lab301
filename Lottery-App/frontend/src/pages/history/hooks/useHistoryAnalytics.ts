@@ -10,6 +10,7 @@ interface ChartPoint {
 interface Ticket {
   key: number;
   date: string;
+  checkTime: string;
   number: string;
   station: string;
   isWon: boolean;
@@ -46,6 +47,7 @@ const useHistoryAnalytics = () => {
             ...t,
             key: allTickets.length,
             date: new Date(s.date).toLocaleDateString(),
+            checkTime: t.checkTime || s.date,
             station: t.station,
           });
         });

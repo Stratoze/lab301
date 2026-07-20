@@ -13,7 +13,7 @@ interface AnalyticsChartProps {
 
 const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ data }) => {
   return (
-    <div style={{ height: 300, width: '100%' }}>
+    <div style={{ height: 300, width: '100%', minHeight: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />

@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Table, Card, Tag, Button, Input, Space, DatePicker, Select, Typography, message, Modal, Skeleton } from 'antd';
-import { EditOutlined, PlusOutlined, EyeOutlined, CalendarOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, Skeleton } from 'antd';
+import { EditOutlined, PlusOutlined, EyeOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import AddTicketModal from './components/AddTicketModal';
 import DashboardCard from '../../components/DashboardCard';
+import CardList from '../../components/CardList';
+import TicketCard from '../../components/TicketCard';
 
-const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
 interface TicketData {
@@ -243,26 +244,11 @@ const ManageTickets: React.FC = () => {
 
         {/* Mobile Cards */}
         <div className="mobile-view">
-          {loading ? <Skeleton active paragraph={{ rows: 4 }} /> : (
-            sortedData.map((ticket: any) => ( /* Updated to use sortedData */
-              <Card key={ticket.id} style={{ marginBottom: 12, borderRadius: 12 }} styles={{ body: { padding: 16 } }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong style={{ fontSize: 16 }}>{ticket.resultCode}</Text>
-                  <Space size={[4, 4]} wrap>
-                    <Tag color={ticket.status === 'PUBLISH' ? 'green' : 'default'}>{ticket.status}</Tag>
-                    <Tag icon={<EyeOutlined />} color="blue">{(ticket.totalQueries ?? 0).toLocaleString()} Views</Tag>
-                  </Space>
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <div><CalendarOutlined /> Date Added: {ticket.drawDate}</div>
-                  <Text type="secondary">Station: {ticket.stationName}</Text>
-                </div>
-                <div style={{ marginTop: 12, borderTop: '1px solid #f0f0f0', paddingTop: 12, textAlign: 'right' }}>
-                  <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(ticket)}>Edit</Button>
-                </div>
-              </Card>
-            ))
-          )}
+          <CardList loading={loading}>
+            {sortedData.map((ticket) => (
+              <TicketCard key={ticket.id} ticket={ticket} onEdit={handleEdit} />
+            ))}
+          </CardList>
         </div>
       </DashboardCard>
 
