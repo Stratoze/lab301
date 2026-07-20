@@ -101,6 +101,11 @@ public class CheckerServiceImpl implements CheckerService {
     }
 
     @Override
+    public List<LocalDate> getAvailableDates(Integer stationId) {
+        return resultRepository.findDrawDatesByStation(stationId);
+    }
+
+    @Override
     public List<Map<String, Object>> getUserHistory(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));

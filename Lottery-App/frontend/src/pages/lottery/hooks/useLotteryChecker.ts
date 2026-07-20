@@ -25,6 +25,7 @@ const useLotteryChecker = () => {
   const [loading, setLoading] = useState(false);
   const [stations, setStations] = useState<any[]>([]);
   const [results, setResults] = useState<CheckResult | null>(null);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const isGuest = !localStorage.getItem('token');
 
   const [form, setForm] = useState<FormState>({
@@ -43,6 +44,19 @@ const useLotteryChecker = () => {
       }
     });
   }, []);
+
+  // Fetch available dates when station changes
+  useEffect(() => {
+    if (!form.stationId) {
+      setAvailableDates([]);
+      return;
+    }
+    apiClient.get('/checker/available-dates', { params: { stationId: form.stationId } })
+      .then(res => {
+        setAvailableDates(res.data.data || []);
+      })
+      .catch(() => setAvailableDates([]));
+  }, [form.stationId]);
 
   const handleCheck = async () => {
     const nums = form.numbers.split(/[\n,;]+/).filter((n: string) => n.trim());
@@ -84,6 +98,7 @@ const useLotteryChecker = () => {
     setForm,
     handleCheck,
     setResults,
+    availableDates,
   };
 };
 

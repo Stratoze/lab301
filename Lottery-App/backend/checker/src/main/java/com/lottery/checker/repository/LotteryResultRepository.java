@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,4 +28,7 @@ public interface LotteryResultRepository extends JpaRepository<LotteryResult, Lo
             @Param("endDate") LocalDate endDate,
             @Param("keyword") String keyword,
             Pageable pageable);
+
+    @Query("SELECT DISTINCT r.drawDate FROM LotteryResult r WHERE r.station.id = :stationId AND r.status = 'PUBLISH' ORDER BY r.drawDate")
+    List<LocalDate> findDrawDatesByStation(@Param("stationId") Integer stationId);
 }

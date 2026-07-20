@@ -58,6 +58,12 @@ public class CheckerController {
         return ResponseEntity.ok(ApiResponse.success(checkerService.checkTickets(stationId, date, numbers, resolvedEmail)));
     }
 
+    @GetMapping("/available-dates")
+    public ResponseEntity<ApiResponse<List<LocalDate>>> getAvailableDates(
+            @RequestParam Integer stationId) {
+        return ResponseEntity.ok(ApiResponse.success(checkerService.getAvailableDates(stationId)));
+    }
+
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getHistory() {
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();

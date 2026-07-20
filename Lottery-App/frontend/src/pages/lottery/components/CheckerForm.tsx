@@ -1,6 +1,8 @@
 import React from 'react';
-import { Select, DatePicker, Input } from 'antd';
+import { Select } from 'antd';
 import dayjs from 'dayjs';
+import LotteryNumberInput from '../../../components/LotteryNumberInput';
+import HighlightDatePicker from '../../../components/HighlightDatePicker';
 
 interface FormState {
   stationId: number | null;
@@ -22,7 +24,7 @@ const CheckerForm: React.FC<CheckerFormProps> = ({ form, stations, isGuest, onCh
         placeholder="Select Station"
         style={{ width: '100%', borderRadius: 12 }}
         value={form.stationId}
-        onChange={(v) => onChange({ ...form, stationId: v })}
+        onChange={(v) => onChange({ ...form, stationId: v, date: dayjs() })}
       >
         {stations.map((s: any) => (
           <Select.Option key={s.id} value={s.id}>
@@ -31,32 +33,19 @@ const CheckerForm: React.FC<CheckerFormProps> = ({ form, stations, isGuest, onCh
         ))}
       </Select>
 
-      <DatePicker
-        style={{ width: '100%', borderRadius: 2 }}
+      <HighlightDatePicker
+        stationId={form.stationId}
         value={form.date}
         onChange={(d) => onChange({ ...form, date: d || dayjs() })}
       />
 
-      {isGuest ? (
-        <Input
-          placeholder="Enter your 6-digit ticket number"
-          maxLength={6}
-          style={{ borderRadius: 2 }}
-          value={form.numbers}
-          onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-            onChange({ ...form, numbers: val });
-          }}
-        />
-      ) : (
-        <Input.TextArea
-          placeholder="Enter your ticket numbers (separate by comma or newline)"
-          rows={4}
-          style={{ borderRadius: 2 }}
-          value={form.numbers}
-          onChange={(e) => onChange({ ...form, numbers: e.target.value })}
-        />
-      )}
+      <LotteryNumberInput
+        chunkSize={6}
+        maxChunks={isGuest ? 1 : 50}
+        value={form.numbers}
+        onChange={(val) => onChange({ ...form, numbers: val })}
+        placeholder={isGuest ? 'Enter your 6-digit ticket number' : 'Enter ticket numbers (comma or Enter to add)'}
+      />
     </>
   );
 };
