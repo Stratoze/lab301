@@ -77,9 +77,8 @@ const useLotteryChecker = () => {
 
     setLoading(true);
     try {
-      const email = localStorage.getItem('email');
       const res = await apiClient.post('/checker/check', nums, {
-        params: { stationId: form.stationId, date: form.date.format('YYYY-MM-DD'), email }
+        params: { stationId: form.stationId, date: form.date.format('YYYY-MM-DD') }
       });
       setResults(res.data.data);
     } catch (e: any) {

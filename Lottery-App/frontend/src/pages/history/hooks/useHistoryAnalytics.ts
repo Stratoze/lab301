@@ -29,8 +29,7 @@ const useHistoryAnalytics = () => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const email = localStorage.getItem('email');
-      const res = await apiClient.get('/checker/history', { params: { email } });
+      const res = await apiClient.get('/checker/history');
       const sessions = res.data.data || [];
 
       const chart = sessions.map((s: any) => ({
