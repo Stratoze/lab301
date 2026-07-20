@@ -10,7 +10,7 @@ const useStyles = createStyles(({ token, css }) => ({
   `,
   cardMobileBody: css`
     .ant-card-body {
-      padding: 10px;
+      padding: ${token.paddingSM}px;
     }
   `,
   header: css`
