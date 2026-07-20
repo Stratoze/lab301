@@ -37,7 +37,7 @@ const AuthPage: React.FC = () => {
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
-            tabBarStyle={{ marginBottom: 24 }}
+            styles={{ tabBar: { marginBottom: 24 } }}
             items={[
               {
                 key: 'login',

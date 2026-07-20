@@ -335,7 +335,7 @@ const ManageUsers: React.FC = () => {
                     cursor: isBulkMode ? 'pointer' : 'default',
                     transition: 'all 0.2s',
                   }}
-                  bodyStyle={{ padding: 16 }}
+                  styles={{ body: { padding: 16 } }}
                   actions={
                     isBulkMode
                       ? undefined
