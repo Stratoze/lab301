@@ -1,11 +1,9 @@
 package com.lottery.checker.service.impl;
 
 import com.lottery.checker.dto.request.RegisterRequest;
-import com.lottery.checker.dto.request.SocialLoginRequest;
 import com.lottery.checker.dto.response.LinkedAccountsResponse;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
-import com.lottery.checker.entity.PasswordResetToken;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
 import com.lottery.checker.entity.UserAuthProvider;
@@ -161,7 +159,7 @@ class UserServiceImpl implements UserService {
     public void changePassword(String email, String oldPassword, String newPassword) {
         User user = findByEmail(email);
         
-        boolean isSettingInitialPassword = (user.getPassword() == null);
+        boolean isSettingInitialPassword = user.getPassword() == null;
         
         if (isSettingInitialPassword) {
             // Social user setting password for the first time: no old password required
