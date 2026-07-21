@@ -16,7 +16,7 @@ const CheckerResults: React.FC<CheckerResultsProps> = ({ results, isGuest }) => 
         <Alert
           key={i}
           style={{ marginBottom: 12, borderRadius: 12 }}
-          message={`Ticket: ${res.number}`}
+          title={`Ticket: ${res.number}`}
           description={res.isWon ? `Congratulations!! you won the ${res.prize} prize` : "Better luck next time"}
           type={res.isWon ? "success" : "error"}
           showIcon
@@ -40,7 +40,7 @@ const CheckerResults: React.FC<CheckerResultsProps> = ({ results, isGuest }) => 
         />
       ))}
       <Alert
-        message="Summary"
+        title="Summary"
         description={`Total Spent: ${results.summary.totalSpent.toLocaleString()} VND | Total Won: ${results.summary.totalWon.toLocaleString()} VND`}
         type="info"
         showIcon

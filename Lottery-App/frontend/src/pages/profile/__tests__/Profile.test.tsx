@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Profile from '../Profile';
@@ -73,7 +73,9 @@ describe('Profile', () => {
 
   // 5.10 User info displayed correctly
   it('displays user info: userCode, email, fullName', () => {
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     expect(screen.getByText('USR-10-2023-00000003')).toBeInTheDocument();
     expect(screen.getByText('khach1@gmail.com')).toBeInTheDocument();
@@ -88,7 +90,9 @@ describe('Profile', () => {
       linkedAccounts: { ...baseMockReturn.linkedAccounts, hasPassword: true },
     });
 
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     expect(screen.getByText('Enter Your Current Password')).toBeInTheDocument();
   });
@@ -101,7 +105,9 @@ describe('Profile', () => {
       linkedAccounts: { ...baseMockReturn.linkedAccounts, hasPassword: false },
     });
 
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     expect(screen.queryByText('Enter Your Current Password')).not.toBeInTheDocument();
     // Title changes to "Set a Password"
@@ -110,13 +116,16 @@ describe('Profile', () => {
 
   // 5.13 Copy to clipboard
   it('copies text to clipboard when copy button clicked', async () => {
+    const user = userEvent.setup();
     const clipboardSpy = vi.spyOn(navigator.clipboard, 'writeText');
 
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     // Click the first copy button (next to user code) - antd CopyOutlined icon has aria-label="copy"
     const copyButtons = screen.getAllByLabelText('copy');
-    await userEvent.click(copyButtons[0]);
+    await user.click(copyButtons[0]);
 
     expect(clipboardSpy).toHaveBeenCalledWith('USR-10-2023-00000003');
     expect(message.success).toHaveBeenCalledWith('Copied to clipboard');
@@ -124,6 +133,7 @@ describe('Profile', () => {
 
   // 5.14 Change password - success flow
   it('shows success message on successful password change', async () => {
+    const user = userEvent.setup();
     const changePassword = vi.fn().mockResolvedValue(undefined);
     mockUseProfile.mockReturnValue({
       ...baseMockReturn,
@@ -131,20 +141,22 @@ describe('Profile', () => {
       changePassword,
     });
 
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     // Fill old password, new password, confirm
     const oldPw = screen.getByLabelText(/Enter Your Current Password/i);
     const newPwFields = screen.getAllByLabelText(/New Password/i);
     const confirmPw = screen.getByLabelText(/Confirm your new password/i);
 
-    await userEvent.type(oldPw, 'oldPassword123');
-    await userEvent.type(newPwFields[0], 'NewStrongPass1!');
-    await userEvent.type(confirmPw, 'NewStrongPass1!');
+    await user.type(oldPw, 'oldPassword123');
+    await user.type(newPwFields[0], 'NewStrongPass1!');
+    await user.type(confirmPw, 'NewStrongPass1!');
 
     // Click OK button on modal
     const okButton = screen.getByRole('button', { name: /OK/i });
-    await userEvent.click(okButton);
+    await user.click(okButton);
 
     await vi.waitFor(() => {
       expect(changePassword).toHaveBeenCalledWith('oldPassword123', 'NewStrongPass1!');
@@ -153,23 +165,26 @@ describe('Profile', () => {
 
   // 5.15 Change password - mismatch error
   it('shows validation error when passwords do not match', async () => {
+    const user = userEvent.setup();
     mockUseProfile.mockReturnValue({
       ...baseMockReturn,
       isPassModalOpen: true,
     });
 
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     const oldPw = screen.getByLabelText(/Enter Your Current Password/i);
     const newPwFields = screen.getAllByLabelText(/New Password/i);
     const confirmPw = screen.getByLabelText(/Confirm your new password/i);
 
-    await userEvent.type(oldPw, 'oldPassword123');
-    await userEvent.type(newPwFields[0], 'NewStrongPass1!');
-    await userEvent.type(confirmPw, 'DifferentPass1!');
+    await user.type(oldPw, 'oldPassword123');
+    await user.type(newPwFields[0], 'NewStrongPass1!');
+    await user.type(confirmPw, 'DifferentPass1!');
 
     const okButton = screen.getByRole('button', { name: /OK/i });
-    await userEvent.click(okButton);
+    await user.click(okButton);
 
     // Ant Design shows inline validation error
     await vi.waitFor(() => {
@@ -179,6 +194,7 @@ describe('Profile', () => {
 
   // 5.16 Change password - API error is displayed
   it('displays error message when change password API fails', async () => {
+    const user = userEvent.setup();
     const changePassword = vi.fn().mockRejectedValue(new Error('Current password is incorrect'));
     mockUseProfile.mockReturnValue({
       ...baseMockReturn,
@@ -186,18 +202,20 @@ describe('Profile', () => {
       changePassword,
     });
 
-    render(<Profile />);
+    act(() => {
+      render(<Profile />);
+    });
 
     const oldPw = screen.getByLabelText(/Enter Your Current Password/i);
     const newPwFields = screen.getAllByLabelText(/New Password/i);
     const confirmPw = screen.getByLabelText(/Confirm your new password/i);
 
-    await userEvent.type(oldPw, 'wrongOldPassword');
-    await userEvent.type(newPwFields[0], 'NewStrongPass1!');
-    await userEvent.type(confirmPw, 'NewStrongPass1!');
+    await user.type(oldPw, 'wrongOldPassword');
+    await user.type(newPwFields[0], 'NewStrongPass1!');
+    await user.type(confirmPw, 'NewStrongPass1!');
 
     const okButton = screen.getByRole('button', { name: /OK/i });
-    await userEvent.click(okButton);
+    await user.click(okButton);
 
     await vi.waitFor(() => {
       expect(message.error).toHaveBeenCalledWith('Current password is incorrect');

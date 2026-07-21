@@ -70,7 +70,7 @@ const Profile: React.FC = () => {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <DashboardCard title="My Profile">
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
           <ProfileDetails
             userCode={user.userCode}
             email={user.email}

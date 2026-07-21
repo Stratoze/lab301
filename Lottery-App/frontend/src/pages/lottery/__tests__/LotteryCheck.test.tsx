@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LotteryCheck from '../LotteryCheck';
@@ -44,11 +44,12 @@ describe('LotteryCheck', () => {
       isGuest: true,
     });
 
-    render(<LotteryCheck />);
+    act(() => {
+      render(<LotteryCheck />);
+    });
 
     expect(screen.getByText('Lottery Check')).toBeInTheDocument();
     expect(screen.getByText('Check Ticket')).toBeInTheDocument();
-    // Guest placeholder text
     expect(screen.getByPlaceholderText(/Enter your 6-digit ticket number/i)).toBeInTheDocument();
   });
 
@@ -59,7 +60,9 @@ describe('LotteryCheck', () => {
       isGuest: false,
     });
 
-    render(<LotteryCheck />);
+    act(() => {
+      render(<LotteryCheck />);
+    });
 
     expect(screen.getByPlaceholderText(/Enter ticket numbers/i)).toBeInTheDocument();
   });
@@ -79,7 +82,9 @@ describe('LotteryCheck', () => {
       results: checkResult,
     });
 
-    render(<LotteryCheck />);
+    act(() => {
+      render(<LotteryCheck />);
+    });
 
     expect(screen.getByText(/Ticket: 123485/)).toBeInTheDocument();
     expect(screen.getByText(/Congratulations!! you won the G8 prize/)).toBeInTheDocument();
@@ -102,7 +107,9 @@ describe('LotteryCheck', () => {
       results: checkResult,
     });
 
-    render(<LotteryCheck />);
+    act(() => {
+      render(<LotteryCheck />);
+    });
 
     expect(screen.getByText(/Better luck next time/)).toBeInTheDocument();
     expect(screen.getByText(/Total Won: 0 VND/)).toBeInTheDocument();
@@ -123,7 +130,9 @@ describe('LotteryCheck', () => {
       results: checkResult,
     });
 
-    render(<LotteryCheck />);
+    act(() => {
+      render(<LotteryCheck />);
+    });
 
     expect(screen.getByText('Share')).toBeInTheDocument();
   });
@@ -143,7 +152,9 @@ describe('LotteryCheck', () => {
       results: checkResult,
     });
 
-    render(<LotteryCheck />);
+    act(() => {
+      render(<LotteryCheck />);
+    });
 
     expect(screen.queryByText('Share')).not.toBeInTheDocument();
   });

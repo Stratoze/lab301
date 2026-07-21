@@ -66,7 +66,7 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
 
   const onFinish = async (values: any) => {
     const prizes = Object.entries(prizeConfig).map(([field, config]) => ({
-      type: field.toUpperCase().replace('G_', 'G'),
+      type: field.toUpperCase(),
       winningNumbers: values[field] || '',
       rewardAmount: config.rewardAmount,
     })).filter(p => p.winningNumbers.trim() !== '');

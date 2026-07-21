@@ -32,7 +32,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({
   const { styles } = useStyles();
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+    <Space orientation="vertical" style={{ width: '100%' }} size="middle">
       <div>
         <Text type="secondary">User Code</Text>
         <div className={styles.infoRow}>

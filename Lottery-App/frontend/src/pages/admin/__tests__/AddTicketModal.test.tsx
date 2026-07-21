@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AddTicketModal from '../components/AddTicketModal';
 
@@ -78,10 +79,11 @@ describe('AddTicketModal', () => {
   });
 
   // 5.8 Cancel button calls onClose
-  it('calls onClose when cancel is clicked', () => {
+  it('calls onClose when cancel is clicked', async () => {
+    const user = userEvent.setup();
     renderModal();
 
-    fireEvent.click(screen.getByText('Cancel'));
+    await user.click(screen.getByText('Cancel'));
 
     expect(onClose).toHaveBeenCalled();
   });
@@ -98,20 +100,29 @@ describe('AddTicketModal', () => {
     expect(inputs).toHaveLength(9);
   });
 
+  // Helper to fill all 9 prize fields with digit counts matching the labels
+  // Input order: Special (6), 1st (5), 2nd (5), 3rd (5), 4th (5), 5th (4), 6th (4), 7th (3), 8th (2)
+  const fillValidPrizes = async (user: ReturnType<typeof userEvent.setup>) => {
+    const inputs = screen.getAllByTestId('number-input');
+    // Non-overlapping numbers: no number ends with another number in this set
+    const validNumbers = ['111111', '22222', '33333', '44444', '55555', '6666', '7777', '888', '99'];
+    for (let i = 0; i < inputs.length; i++) {
+      await user.clear(inputs[i]);
+      await user.type(inputs[i], validNumbers[i]);
+    }
+  };
+
   // 5.10 Successful save closes modal and calls onSuccess
   it('closes modal and calls onSuccess after successful save', async () => {
+    const user = userEvent.setup();
     const apiClient = (await import('../../../api/apiClient')).default;
     vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { id: 1 } });
 
     renderModal();
 
-    // Fill required fields: station (already defaulted), date, and all 9 prize inputs
-    const inputs = screen.getAllByTestId('number-input');
-    for (const input of inputs) {
-      fireEvent.change(input, { target: { value: '123' } });
-    }
+    await fillValidPrizes(user);
 
-    fireEvent.click(screen.getByText('Save'));
+    await user.click(screen.getByText('Save'));
 
     await vi.waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('/admin/tickets', expect.any(Object));
@@ -120,6 +131,7 @@ describe('AddTicketModal', () => {
 
   // 5.11 Duplicate station/date shows error message
   it('shows error when duplicate station/date is submitted', async () => {
+    const user = userEvent.setup();
     const apiClient = (await import('../../../api/apiClient')).default;
     vi.mocked(apiClient.post).mockRejectedValueOnce({
       response: { data: { message: 'Potential duplicate date/station' } },
@@ -129,12 +141,9 @@ describe('AddTicketModal', () => {
 
     renderModal();
 
-    const inputs = screen.getAllByTestId('number-input');
-    for (const input of inputs) {
-      fireEvent.change(input, { target: { value: '12' } });
-    }
+    await fillValidPrizes(user);
 
-    fireEvent.click(screen.getByText('Save'));
+    await user.click(screen.getByText('Save'));
 
     await vi.waitFor(() => {
       expect(message.error).toHaveBeenCalledWith(
