@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.1.0</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.lottery</groupId>
 	<artifactId>checker</artifactId>
@@ -27,9 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
-		<spotbugs.version>4.8.6.0</spotbugs.version>
-		<pmd.version>3.21.2</pmd.version>
+		<java.version>25</java.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -128,10 +126,12 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
 				<configuration>
+					<release>25</release>
 					<compilerArgs>
 						<arg>-Xlint:all</arg>
-						<arg>-Xlint:-processing</arg> <!-- Silences harmless annotation processing warnings -->
+						<arg>-Xlint:-processing</arg>
 					</compilerArgs>
 				</configuration>
 				<executions>
@@ -168,15 +168,17 @@
 				</executions>
 			</plugin>
 
-			<!-- SpotBugs Plugin: Catches dead code, null pointers, unused fields -->
+			<!-- SpotBugs Plugin -->
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>${spotbugs.version}</version>
+				<version>4.10.3.0</version>
 				<configuration>
 					<effort>Max</effort>
 					<threshold>Medium</threshold>
 					<failOnError>true</failOnError>
+					<!-- Limit SpotBugs analysis strictly to your package -->
+					<onlyAnalyze>com.lottery.checker.-</onlyAnalyze>
 				</configuration>
 				<executions>
 					<execution>
@@ -189,11 +191,11 @@
 				</executions>
 			</plugin>
 
-			<!-- PMD Plugin: Detects unused variables, bad practices, and dead code -->
+			<!-- PMD Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-pmd-plugin</artifactId>
-				<version>${pmd.version}</version>
+				<version>3.26.0</version>
 				<configuration>
 					<failOnViolation>true</failOnViolation>
 					<printFailingErrors>true</printFailingErrors>
