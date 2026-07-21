@@ -9,6 +9,7 @@ import com.lottery.checker.dto.response.PasswordRulesResponse;
 import com.lottery.checker.entity.User;
 import com.lottery.checker.service.SocialAuthService;
 import com.lottery.checker.service.UserService;
+import com.lottery.checker.validation.PasswordRulesHolder;
 import jakarta.validation.Valid;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class AuthController {
     private final SocialAuthService socialAuthService;
     private final PasswordEncoder passwordEncoder;
     private final com.lottery.checker.security.JwtService jwtService;
+    private final PasswordRulesHolder passwordRulesHolder;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
@@ -43,9 +45,9 @@ public class AuthController {
     @GetMapping("/password-rules")
     public ResponseEntity<ApiResponse<PasswordRulesResponse>> getPasswordRules() {
         PasswordRulesResponse rules = new PasswordRulesResponse(
-                com.lottery.checker.validation.PasswordRulesHolder.getMinLength(),
-                com.lottery.checker.validation.PasswordRulesHolder.getMaxLength(),
-                com.lottery.checker.validation.PasswordRulesHolder.getBlocklist()
+                passwordRulesHolder.getMinLength(),
+                passwordRulesHolder.getMaxLength(),
+                passwordRulesHolder.getBlocklist()
         );
         return ResponseEntity.ok(ApiResponse.success(rules));
     }

@@ -2,8 +2,9 @@ package com.lottery.checker.validation;
 
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -12,38 +13,40 @@ import org.springframework.stereotype.Component;
 @PropertySource("classpath:password-rules.properties")
 public class PasswordRulesHolder {
 
-    @Value("${password.min-length}")
+    @Value("${password.min-length:10}")
     private int minLength;
 
-    @Value("${password.max-length}")
+    @Value("${password.max-length:64}")
     private int maxLength;
 
-    @Value("${password.blocklist}")
+    @Value("${password.blocklist:}")
     private String blocklistCsv;
 
-    @Value("${password.dictionary-words}")
+    @Value("${password.dictionary-words:}")
     private String dictionaryWordsCsv;
 
-    private static int MIN_LENGTH;
-    private static int MAX_LENGTH;
-    private static Set<String> BLOCKLIST = new HashSet<>();
-    private static Set<String> DICTIONARY_WORDS = new HashSet<>();
+    private Set<String> blocklist = Collections.emptySet();
+    private Set<String> dictionaryWords = Collections.emptySet();
 
     @PostConstruct
     public void init() {
-        MIN_LENGTH = this.minLength;
-        MAX_LENGTH = this.maxLength;
-        BLOCKLIST = parseSet(this.blocklistCsv);
-        DICTIONARY_WORDS = parseSet(this.dictionaryWordsCsv);
+        this.blocklist = parseSet(this.blocklistCsv);
+        this.dictionaryWords = parseSet(this.dictionaryWordsCsv);
     }
 
     private Set<String> parseSet(String csv) {
-        if (csv == null || csv.isBlank()) return new HashSet<>();
-        return new HashSet<>(Arrays.asList(csv.toLowerCase().split(",")));
+        if (csv == null || csv.isBlank()) return Collections.emptySet();
+        return Collections.unmodifiableSet(
+            Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet())
+        );
     }
 
-    public static int getMinLength() { return MIN_LENGTH; }
-    public static int getMaxLength() { return MAX_LENGTH; }
-    public static Set<String> getBlocklist() { return BLOCKLIST; }
-    public static Set<String> getDictionaryWords() { return DICTIONARY_WORDS; }
+    public int getMinLength() { return minLength; }
+    public int getMaxLength() { return maxLength; }
+    public Set<String> getBlocklist() { return Set.copyOf(blocklist); }
+    public Set<String> getDictionaryWords() { return Set.copyOf(dictionaryWords); }
 }

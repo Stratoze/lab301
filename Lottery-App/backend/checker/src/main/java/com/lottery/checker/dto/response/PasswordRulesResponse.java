@@ -6,4 +6,8 @@ public record PasswordRulesResponse(
     int minLength,
     int maxLength,
     Set<String> blocklist
-) {}
+) {
+    public PasswordRulesResponse {
+        blocklist = Set.copyOf(blocklist);
+    }
+}

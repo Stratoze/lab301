@@ -166,6 +166,9 @@ public class SocialAuthServiceImpl implements SocialAuthService {
         } catch (Exception e) {
             throw new SecurityException("Failed to fetch Google JWKS", e);
         }
+        if (jwks == null) {
+            throw new SecurityException("Empty response from Google JWKS endpoint");
+        }
 
         cachedGoogleKeys = new ConcurrentHashMap<>();
         List<Map<String, Object>> keys = (List<Map<String, Object>>) jwks.get("keys");

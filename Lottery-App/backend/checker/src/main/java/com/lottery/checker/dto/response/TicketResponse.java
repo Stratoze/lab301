@@ -13,6 +13,9 @@ public record TicketResponse(
     Long totalQueries,
     List<PrizeResponse> prizes
 ) {
+    public TicketResponse {
+        prizes = List.copyOf(prizes);
+    }
     public static TicketResponse fromEntity(LotteryResult result) {
         List<PrizeResponse> prizeList = result.getPrizeDetails().stream()
                 .map(p -> new PrizeResponse(p.getPrizeType(), p.getWinningNumber(), p.getRewardAmount()))

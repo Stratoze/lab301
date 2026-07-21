@@ -15,8 +15,6 @@ import com.lottery.checker.repository.UserRepository;
 import com.lottery.checker.service.SocialAuthService;
 import com.lottery.checker.service.UserService;
 import com.lottery.checker.validation.PasswordValidator;
-import jakarta.validation.Validation;
-import jakarta.validation.ValidatorFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,9 +42,9 @@ class UserServiceImpl implements UserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final JavaMailSender mailSender;
     private final SocialAuthService socialAuthService;
+    private final PasswordValidator passwordValidator;
 
     private static final AtomicLong userCounter = new AtomicLong(16);
-    private final PasswordValidator passwordValidator = new PasswordValidator();
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
 
@@ -199,9 +197,9 @@ class UserServiceImpl implements UserService {
         message.setTo(user.getEmail());
         message.setSubject("Your New Temporary Password");
         message.setText(String.format(
-            "Hello %s,\n\n" +
-            "Your temporary password is: %s\n\n" +
-            "Please log in and change it immediately.\n\n" +
+            "Hello %s,%n%n" +
+            "Your temporary password is: %s%n%n" +
+            "Please log in and change it immediately.%n%n" +
             "? Lottery System",
             user.getFullName(), tempPassword
         ));
@@ -267,7 +265,7 @@ class UserServiceImpl implements UserService {
             message.setTo(user.getEmail());
             message.setSubject(subject);
             message.setText(String.format(
-                "Hello %s,\n\n%s\n\n? Lottery System",
+                "Hello %s,%n%n%s%n%n? Lottery System",
                 user.getFullName(), content
             ));
             mailSender.send(message);

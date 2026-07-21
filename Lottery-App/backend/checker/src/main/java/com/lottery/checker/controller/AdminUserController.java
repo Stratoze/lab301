@@ -107,9 +107,9 @@ public class AdminUserController {
 
     private byte[] generateCsv(List<UserResponse> users) {
         StringBuilder csv = new StringBuilder();
-        csv.append("User Code,Full Name,Email,Phone,Role,Status,Last Login,Created At\n");
+        csv.append("User Code,Full Name,Email,Phone,Role,Status,Last Login,Created At%n");
         for (UserResponse u : users) {
-            csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s\n",
+            csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s%n",
                 escapeCsv(u.userCode()),
                 escapeCsv(u.fullName()),
                 escapeCsv(u.email()),

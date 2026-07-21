@@ -9,4 +9,8 @@ public record CreateTicketRequest(
     @NotNull LocalDate drawDate,
     @NotNull List<PrizeRequest> prizes,
     String status // PUBLISH or UNPUBLISH
-) {}
+) {
+    public CreateTicketRequest {
+        prizes = List.copyOf(prizes);
+    }
+}

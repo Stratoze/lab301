@@ -9,8 +9,7 @@ import com.lottery.checker.repository.PasswordResetTokenRepository;
 import com.lottery.checker.repository.UserAuthProviderRepository;
 import com.lottery.checker.repository.UserRepository;
 import com.lottery.checker.service.impl.UserServiceImpl;
-import com.lottery.checker.validation.PasswordRulesHolder;
-import org.junit.jupiter.api.AfterEach;
+import com.lottery.checker.validation.PasswordValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,11 +34,10 @@ class UserServiceImplTest {
     @Mock private PasswordResetTokenRepository passwordResetTokenRepository;
     @Mock private JavaMailSender mailSender;
     @Mock private SocialAuthService socialAuthService;
+    @Mock private PasswordValidator passwordValidator;
 
     @InjectMocks
     private UserServiceImpl userService;
-
-    private MockedStatic<PasswordRulesHolder> passwordRulesMock;
 
     private User testUser;
     private User adminUser;
@@ -47,11 +45,6 @@ class UserServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        passwordRulesMock = mockStatic(PasswordRulesHolder.class);
-        passwordRulesMock.when(PasswordRulesHolder::getMinLength).thenReturn(10);
-        passwordRulesMock.when(PasswordRulesHolder::getMaxLength).thenReturn(64);
-        passwordRulesMock.when(PasswordRulesHolder::getBlocklist).thenReturn(Set.of());
-        passwordRulesMock.when(PasswordRulesHolder::getDictionaryWords).thenReturn(Set.of());
 
         testUser = User.builder()
                 .id(3L)
@@ -85,13 +78,6 @@ class UserServiceImplTest {
                 .role(Role.ROLE_USER)
                 .isActive(false)
                 .build();
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (passwordRulesMock != null) {
-            passwordRulesMock.close();
-        }
     }
 
     // 3.1 Register - valid user returns created user with BCrypt
@@ -167,9 +153,8 @@ class UserServiceImplTest {
         when(passwordEncoder.matches("oldPassword", testUser.getPassword())).thenReturn(true);
         when(passwordEncoder.encode("NewStrongPass1!")).thenReturn("$2a$12$newEncoded...");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(passwordValidator.isValid(eq("NewStrongPass1!"), any())).thenReturn(true);
 
-        // The PasswordValidator will be called - we need a valid password
-        // "NewStrongPass1!" is 14 chars, meets criteria
         assertThatCode(() -> userService.changePassword(
                 "khach1@gmail.com", "oldPassword", "NewStrongPass1!"))
                 .doesNotThrowAnyException();

@@ -9,5 +9,8 @@ public record LinkedAccountsResponse(
     boolean hasPassword,
     List<LinkedProvider> providers
 ) {
+    public LinkedAccountsResponse {
+        providers = List.copyOf(providers);
+    }
     public record LinkedProvider(String provider, String providerId) {}
 }

@@ -2,15 +2,23 @@ package com.lottery.checker.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PasswordValidator implements ConstraintValidator<ValidPassword, String> {
+
+    private final PasswordRulesHolder rules;
+
+    public PasswordValidator(PasswordRulesHolder rules) {
+        this.rules = rules;
+    }
 
     @Override
     public boolean isValid(String password, ConstraintValidatorContext context) {
-        int minLength = PasswordRulesHolder.getMinLength();
-        int maxLength = PasswordRulesHolder.getMaxLength();
-        var blocklist = PasswordRulesHolder.getBlocklist();
-        var dictionaryWords = PasswordRulesHolder.getDictionaryWords();
+        int minLength = rules.getMinLength();
+        int maxLength = rules.getMaxLength();
+        var blocklist = rules.getBlocklist();
+        var dictionaryWords = rules.getDictionaryWords();
 
         if (password == null || password.isBlank()) {
             if (context != null) {

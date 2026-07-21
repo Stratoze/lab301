@@ -1,9 +1,17 @@
-$ErrorActionPreference = "Continue"
-$projectRoot = Get-Location
-$errorLog = @()
-$hasFailed = $false
+<#
+.SYNOPSIS
+    Unified Quality Control Script
+#>
 
-# Helper function to execute and catch output
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$ErrorActionPreference = "Stop"  # Fail fast on PowerShell-level errors
+
+$projectRoot = Get-Location
+$capturedIssues = [System.Collections.Generic.List[string]]::new()
+$hasIssue = $false
+$scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
+
 function Exec-Step {
     param (
         [string]$StepName,
@@ -13,75 +21,97 @@ function Exec-Step {
     Write-Host " ▶ $StepName" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
 
+    # Reset exit code tracker before running
+    $global:LASTEXITCODE = 0
+    
+    # Execute and capture stdout + stderr cleanly without masking $LASTEXITCODE
     $output = & $Command 2>&1 | Out-String
-    Write-Host $output
+    Write-Host $output.Trim()
 
     if ($LASTEXITCODE -ne 0) {
-        $script:hasFailed = $true
-        $script:errorLog += "================ FAILURE AT: $StepName ================"
-        $script:errorLog += $output
-        Write-Host "❌ $StepName FAILED!" -ForegroundColor Red
+        $script:hasIssue = $true
+        $script:capturedIssues.Add("================ [FAILURE: $StepName] ================")
+        $script:capturedIssues.Add($output)
+        Write-Host "❌ $StepName FAILED! (Exit Code: $LASTEXITCODE)" -ForegroundColor Red
         return $false
     }
+
     Write-Host "✅ $StepName PASSED!" -ForegroundColor Green
     return $true
 }
 
-# ------------------------------------------------------------------
-# 1. FRONTEND: Static Analysis & Unit Tests
-# ------------------------------------------------------------------
-$frontendDir = Join-Path $projectRoot "Lottery-App\frontend"
+try {
+    # ------------------------------------------------------------------
+    # 1. FRONTEND: Lint, Build, and Vitest
+    # ------------------------------------------------------------------
+    $frontendDir = Join-Path $projectRoot "Lottery-App\frontend"
 
-if (Test-Path $frontendDir) {
-    Push-Location $frontendDir
+    if (Test-Path $frontendDir) {
+        Push-Location $frontendDir
+        try {
+            if (-not (Test-Path "node_modules")) {
+                Exec-Step "Frontend: Install Dependencies" { npm install }
+            }
 
-    # Fast-check dependencies: only run npm install if node_modules is missing
-    if (-not (Test-Path "node_modules")) {
-        Exec-Step "Frontend: Install Dependencies" { npm install }
+            # Split into discrete steps so failures don't hide each other
+            $lintOk = Exec-Step "Frontend: Lint" { npm run lint }
+            if ($lintOk) {
+                Exec-Step "Frontend: Build" { npm run build }
+            }
+            Exec-Step "Frontend: Unit Tests" { npm test }
+        }
+        finally {
+            Pop-Location
+        }
+    } else {
+        Write-Warning "Frontend path not found: $frontendDir"
     }
 
-    # Run ESLint & Build
-    Exec-Step "Frontend: Static Analysis (ESLint & Build)" { npm run lint; if ($LASTEXITCODE -eq 0) { npm run build } }
+    # ------------------------------------------------------------------
+    # 2. BACKEND: SpotBugs & Unit Tests
+    # ------------------------------------------------------------------
+    $backendDir = Join-Path $projectRoot "Lottery-App\backend\checker"
 
-    # Run Frontend Unit Tests (CI non-interactive mode)
-    Exec-Step "Frontend: Unit Tests" { npm test -- --watchAll=false }
+    if (Test-Path $backendDir) {
+        Push-Location $backendDir
+        try {
+            # Use cross-platform executable path (works on Windows/macOS/Linux)
+            $mvnCmd = if ($IsWindows -or ($env:OS -like "*Windows*")) { ".\mvnw.cmd" } else { "./mvnw" }
 
-    Pop-Location
-} else {
-    Write-Warning "Frontend directory not found at $frontendDir"
-}
-
-# ------------------------------------------------------------------
-# 2. BACKEND: Static Analysis & Unit Tests
-# ------------------------------------------------------------------
-$backendDir = Join-Path $projectRoot "Lottery-App\backend\checker"
-
-if (Test-Path $backendDir) {
-    Push-Location $backendDir
-
-    # Run Maven test + static analysis in ONE unified pass
-    # Runs the specified unit tests AND SpotBugs/PMD during verify phase
-    Exec-Step "Backend: Tests & Static Analysis" { 
-        .\mvnw.cmd clean verify -Dtest="CheckerServiceImplTest,TicketServiceImplTest,UserServiceImplTest,AuthControllerTest" -DfailIfNoTests=false 
+            Exec-Step "Backend: Static Analysis & Unit Tests" { 
+                # Removed hardcoded test files so ALL suite tests run automatically
+                & $mvnCmd clean verify "-Dspotbugs.xmlOutput=false"
+            }
+        }
+        finally {
+            Pop-Location
+        }
+    } else {
+        Write-Warning "Backend path not found: $backendDir"
     }
 
-    Pop-Location
-} else {
-    Write-Warning "Backend directory not found at $backendDir"
 }
+finally {
+    $scriptTimer.Stop()
+    
+    # ------------------------------------------------------------------
+    # 3. SUMMARY & CLIPBOARD
+    # ------------------------------------------------------------------
+    Write-Host "`n========================================" -ForegroundColor Yellow
+    Write-Host " Elapsed Time: $($scriptTimer.Elapsed.ToString('mm\:ss'))" -ForegroundColor Yellow
 
-# ------------------------------------------------------------------
-# 3. SUMMARY & CLIPBOARD FEEDBACK
-# ------------------------------------------------------------------
-Write-Host "`n========================================" -ForegroundColor Yellow
-if ($hasFailed) {
-    $clipboardText = $errorLog -join "`r`n`r`n"
-    $clipboardText | Set-Clipboard
-    Write-Host "❌ SUITE FAILED. Error details copied to clipboard!" -ForegroundColor Red
-    Write-Host "👉 Press Ctrl+V anywhere to paste the exact error stack trace." -ForegroundColor Red
-    Exit 1
-} else {
-    Set-Clipboard -Value $null
-    Write-Host "🎉 ALL FRONTEND & BACKEND CHECKS PASSED PERFECTLY!" -ForegroundColor Green
-    Exit 0
+    if ($hasIssue) {
+        $fullReport = $capturedIssues -join "`r`n`r`n"
+        
+        # Guard clipboard access (avoids crashes in headless CI/CD environments)
+        try { $fullReport | Set-Clipboard } catch {}
+
+        Write-Host "❌ CHECKS FAILED!" -ForegroundColor Red
+        Write-Host "📋 Error log copied to clipboard." -ForegroundColor Red
+        Exit 1
+    } else {
+        try { Set-Clipboard -Value $null } catch {}
+        Write-Host "🎉 ALL CHECKS PASSED!" -ForegroundColor Green
+        Exit 0
+    }
 }
