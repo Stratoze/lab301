@@ -3,7 +3,7 @@ import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, S
 import { EditOutlined, PlusOutlined, EyeOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import dayjs from 'dayjs';
-import AddTicketModal from './components/AddTicketModal';
+import AddTicketModal, { type TicketData } from './components/AddTicketModal';
 import DashboardCard from '../../components/DashboardCard';
 import CardList from '../../components/CardList';
 import TicketCard from '../../components/TicketCard';
@@ -266,7 +266,7 @@ const ManageTickets: React.FC = () => {
       <AddTicketModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        ticket={editingTicket ?? undefined}
+        ticket={editingTicket as unknown as TicketData}
         stations={stations}
         onSuccess={triggerRefresh}
       />

@@ -11,7 +11,7 @@ interface Station {
   stationCode: string;
 }
 
-interface TicketData {
+export interface TicketData {
   stationName: string;
   drawDate: string;
   status: string;
