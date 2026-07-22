@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Table, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton } from 'antd';
+import { Table, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton, Card } from 'antd';
 import { EditOutlined, DownOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserOutlined, StopOutlined, SearchOutlined, CheckCircleFilled, CloseCircleFilled, MailFilled, InfoCircleFilled, SendOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../../api/apiClient';
@@ -401,20 +401,22 @@ const ManageUsers: React.FC = () => {
           {loading && data.length === 0 ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <Table
-              rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
-              columns={columns}
-              dataSource={data}
-              rowKey="id"
-              loading={loading}
-              pagination={{
-                current: page + 1,
-                pageSize,
-                total,
-                onChange: (p) => setPage(p - 1),
-              }}
-              locale={{ emptyText: 'No users found' }}
-            />
+            <Card>
+                <Table
+                  rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
+                  columns={columns}
+                  dataSource={data}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{
+                    current: page + 1,
+                    pageSize,
+                    total,
+                    onChange: (p) => setPage(p - 1),
+                  }}
+                  locale={{ emptyText: 'No users found' }}
+                />
+            </Card>
           )}
         </div>
 

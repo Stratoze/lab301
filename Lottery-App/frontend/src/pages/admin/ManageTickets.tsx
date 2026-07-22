@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, Skeleton } from 'antd';
+import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, Skeleton, Card } from 'antd';
 import { EditOutlined, PlusOutlined, EyeOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import dayjs from 'dayjs';
@@ -271,19 +271,21 @@ const ManageTickets: React.FC = () => {
           {loading && data.length === 0 ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <Table
-              columns={columns}
-              dataSource={sortedData}
-              rowKey="id"
-              loading={loading}
-              pagination={{
-                current: page + 1,
-                pageSize,
-                total,
-                onChange: (p) => setPage(p - 1),
-              }}
-              locale={{ emptyText: 'No tickets found' }}
-            />
+            <Card>
+              <Table
+                columns={columns}
+                dataSource={sortedData}
+                rowKey="id"
+                loading={loading}
+                pagination={{
+                  current: page + 1,
+                  pageSize,
+                  total,
+                  onChange: (p) => setPage(p - 1),
+                }}
+                locale={{ emptyText: 'No tickets found' }}
+              />
+            </Card>
           )}
         </div>
 
