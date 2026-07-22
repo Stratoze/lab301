@@ -75,17 +75,17 @@ const HistoryAnalytics: React.FC = () => {
               {!isMobile ? (
                 /* Desktop */
                 <>
-                  <Card style={{ borderRadius: 12, marginBottom: 24 }}>
+                  <Card style={{ marginBottom: 24 }}>
                     <AnalyticsChart data={chartData} />
                   </Card>
-                  <Card style={{ borderRadius: 12 }}>
+                  <Card>
                     <HistoryTable data={history} />
                   </Card>
                 </>
               ) : (
                 /* Mobile */
                 <>
-                  <Card style={{ borderRadius: 12, marginBottom: 16 }}>
+                  <Card style={{ marginBottom: 16 }}>
                     <AnalyticsChart data={chartData} />
                   </Card>
                   <CardList

@@ -1,12 +1,5 @@
 import React from 'react';
 import { Modal, Form, Input } from 'antd';
-import { createStyles } from 'antd-style';
-
-const useStyles = createStyles(({ token, css }) => ({
-  input: css`
-    border-radius: ${token.borderRadiusSM}px;
-  `,
-}));
 
 interface EditNameModalProps {
   open: boolean;
@@ -18,7 +11,6 @@ interface EditNameModalProps {
 
 const EditNameModal: React.FC<EditNameModalProps> = ({ open, loading, currentName, onCancel, onSubmit }) => {
   const [form] = Form.useForm();
-  const { styles } = useStyles();
 
   React.useEffect(() => {
     if (open) {
@@ -46,7 +38,7 @@ const EditNameModal: React.FC<EditNameModalProps> = ({ open, loading, currentNam
           label="New Full Name"
           rules={[{ required: true, message: 'Full name is required' }]}
         >
-          <Input className={styles.input} />
+          <Input/>
         </Form.Item>
       </Form>
     </Modal>

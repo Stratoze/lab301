@@ -52,7 +52,6 @@ const ResetPasswordPage: React.FC = () => {
         style={{
           width: '100%',
           maxWidth: 420,
-          borderRadius: 12,
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         }}
       >
@@ -94,7 +93,6 @@ const ResetPasswordPage: React.FC = () => {
           >
             <Input
               placeholder="Paste reset token"
-              style={{ borderRadius: 2 }}
             />
           </Form.Item>
 
@@ -119,7 +117,6 @@ const ResetPasswordPage: React.FC = () => {
             <Input.Password
               placeholder="New password"
               autoComplete="new-password"
-              style={{ borderRadius: 2 }}
             />
           </Form.Item>
 
@@ -146,7 +143,6 @@ const ResetPasswordPage: React.FC = () => {
             <Input.Password
               placeholder="Confirm password"
               autoComplete="new-password"
-              style={{ borderRadius: 2 }}
             />
           </Form.Item>
 
@@ -154,7 +150,7 @@ const ResetPasswordPage: React.FC = () => {
             type="primary"
             htmlType="submit"
             block
-            style={{ borderRadius: 12, height: 40 }}
+            style={{ height: 40 }}
           >
             Reset Password
           </Button>

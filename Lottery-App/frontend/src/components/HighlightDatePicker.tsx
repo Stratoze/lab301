@@ -78,7 +78,6 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
         <div
           style={{
             background: has ? '#e6f4ff' : undefined,
-            borderRadius: 12,
             fontWeight: has ? 600 : undefined,
             color: has ? '#1677ff' : undefined,
             padding: '2px 0',
@@ -98,7 +97,6 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
         <div
           style={{
             background: has ? '#e6f4ff' : undefined,
-            borderRadius: 12,
             fontWeight: has ? 600 : undefined,
             color: has ? '#1677ff' : undefined,
             padding: '2px 0',
@@ -128,7 +126,7 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
 
   return (
     <DatePicker
-      style={{ width: '100%', borderRadius: 2, ...style }}
+      style={{ width: '100%', ...style }}
       value={value}
       onChange={onChange}
       disabledDate={disabledDate}

@@ -173,7 +173,6 @@ const LotteryNumberInput: React.FC<LotteryNumberInputProps> = ({
           placeholder={placeholder || `${chunkSize} digits`}
           maxLength={maxChunks === 1 ? chunkSize : undefined}
           disabled={disabled}
-          style={{ borderRadius: 2 }}
         />
       )}
       {editingIndex !== null && (
@@ -185,7 +184,7 @@ const LotteryNumberInput: React.FC<LotteryNumberInputProps> = ({
           placeholder={`Edit ${chunkSize}-digit number`}
           maxLength={chunkSize}
           disabled={disabled}
-          style={{ borderRadius: 2, marginTop: 4 }}
+          style={{ marginTop: 4 }}
         />
       )}
     </div>

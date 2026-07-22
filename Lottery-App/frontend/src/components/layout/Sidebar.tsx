@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedKeys, onNavigate, onLogout, r
           type="text"
           icon={<MenuFoldOutlined />}
           onClick={onLogout}
-          style={{ color: '#ff4d4f', borderRadius: 12 }}
+          style={{ color: '#ff4d4f'}}
           block
         >
           Logout

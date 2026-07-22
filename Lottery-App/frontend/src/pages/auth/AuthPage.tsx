@@ -30,7 +30,6 @@ const AuthPage: React.FC = () => {
           style={{
             width: '100%',
             maxWidth: 400,
-            borderRadius: 12,
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           }}
         >
@@ -83,7 +82,6 @@ const AuthPage: React.FC = () => {
           }
           .auth-card {
             margin: 0 !important;
-            border-radius: 12px !important;
           }
         }
 

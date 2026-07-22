@@ -2,12 +2,6 @@ import React from 'react';
 import { Modal, Form, Input } from 'antd';
 import { createStyles } from 'antd-style';
 
-const useStyles = createStyles(({ token, css }) => ({
-  input: css`
-    border-radius: ${token.borderRadiusSM}px;
-  `,
-}));
-
 interface AddPhoneModalProps {
   open: boolean;
   loading: boolean;
@@ -17,7 +11,6 @@ interface AddPhoneModalProps {
 
 const AddPhoneModal: React.FC<AddPhoneModalProps> = ({ open, loading, onCancel, onSubmit }) => {
   const [form] = Form.useForm();
-  const { styles } = useStyles();
 
   React.useEffect(() => {
     if (open) {
@@ -48,7 +41,7 @@ const AddPhoneModal: React.FC<AddPhoneModalProps> = ({ open, loading, onCancel, 
             { pattern: /^\d{7,15}$/, message: 'Enter a valid phone number (7-15 digits)' },
           ]}
         >
-          <Input placeholder="e.g., 0912345678" className={styles.input} />
+          <Input placeholder="e.g., 0912345678"/>
         </Form.Item>
       </Form>
     </Modal>

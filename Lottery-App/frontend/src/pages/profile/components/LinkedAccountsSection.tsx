@@ -79,7 +79,6 @@ const LinkedAccountsSection: React.FC<LinkedAccountsSectionProps> = ({
               }}
               onError={() => message.error('Google login failed')}
               size="medium"
-              shape="rectangular"
               text="continue_with"
             />
           )}
@@ -104,7 +103,6 @@ const LinkedAccountsSection: React.FC<LinkedAccountsSectionProps> = ({
               icon={<FacebookFilled />}
               onClick={handleFacebookLink}
               loading={loading}
-              shape="round"
             >
               Link
             </Button>
@@ -131,7 +129,6 @@ const LinkedAccountsSection: React.FC<LinkedAccountsSectionProps> = ({
               danger
               onClick={onUnlinkPhone}
               loading={loading}
-              shape="round"
             >
               Unlink
             </Button>
@@ -139,7 +136,6 @@ const LinkedAccountsSection: React.FC<LinkedAccountsSectionProps> = ({
             <Button
               icon={<LinkOutlined />}
               onClick={onAddPhone}
-              shape="round"
             >
               Add Phone
             </Button>

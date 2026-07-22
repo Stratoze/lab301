@@ -175,7 +175,7 @@ const ManageTickets: React.FC = () => {
     <Space wrap>
       <Select
         placeholder="Select Station"
-        style={{ width: 200, borderRadius: 2 }}
+        style={{ width: 200 }}
         allowClear
         value={filters.stationId}
         onChange={(val) => setFilters({ ...filters, stationId: val || null })}
@@ -183,7 +183,6 @@ const ManageTickets: React.FC = () => {
         {stations.map((s: { id: number; name: string }) => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}
       </Select>
       <RangePicker
-        style={{ borderRadius: 2 }}
         onChange={(dates) => setFilters({
           ...filters,
           startDate: dates ? dates[0] : null,
@@ -193,9 +192,9 @@ const ManageTickets: React.FC = () => {
       <Input.Search
         placeholder="Search by result code or station"
         onSearch={(val) => setFilters({ ...filters, keyword: val })}
-        style={{ width: 250, borderRadius: 2 }}
+        style={{ width: 250 }}
       />
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTicket(null); setIsModalOpen(true); }} style={{ borderRadius: 12 }}>
+      <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTicket(null); setIsModalOpen(true); }}>
         Add New
       </Button>
     </Space>
@@ -209,12 +208,11 @@ const ManageTickets: React.FC = () => {
         onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
         onPressEnter={triggerRefresh}
         allowClear
-        style={{ borderRadius: 12 }}
       />
       <Select
         placeholder="Sort By"
         suffixIcon={<DownOutlined />}
-        style={{ width: '100%', borderRadius: 12 }}
+        style={{ width: '100%' }}
         allowClear
         value={sortBy}
         onChange={(val) => setSortBy(val)}
@@ -228,7 +226,7 @@ const ManageTickets: React.FC = () => {
         ]}
       />
       <RangePicker
-        style={{ width: '100%', borderRadius: 12 }}
+        style={{ width: '100%' }}
         onChange={(dates) => setFilters({
           ...filters,
           startDate: dates ? dates[0] : null,
@@ -239,7 +237,6 @@ const ManageTickets: React.FC = () => {
         type="primary"
         icon={<PlusOutlined />}
         onClick={() => { setEditingTicket(null); setIsModalOpen(true); }}
-        style={{ borderRadius: 12 }}
         block
       >
         Add New Ticket

@@ -1,14 +1,7 @@
 import React from 'react';
 import { Modal, Form, Input } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
-import { createStyles } from 'antd-style';
 import PasswordField from '../../../components/PasswordField';
-
-const useStyles = createStyles(({ token, css }) => ({
-  input: css`
-    border-radius: ${token.borderRadiusSM}px;
-  `,
-}));
 
 interface ChangePasswordModalProps {
   open: boolean;
@@ -26,7 +19,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   onSubmit,
 }) => {
   const [form] = Form.useForm();
-  const { styles } = useStyles();
 
   React.useEffect(() => {
     if (open) {
@@ -60,10 +52,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             label="Enter Your Current Password"
             rules={[{ required: true, message: 'Current password is required' }]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              className={styles.input}
-            />
+            <Input.Password prefix={<LockOutlined />}/>
           </Form.Item>
         )}
         <PasswordField name="newPassword" label="New Password" />
@@ -85,7 +74,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         >
           <Input.Password
             prefix={<LockOutlined />}
-            className={styles.input}
           />
         </Form.Item>
       </Form>

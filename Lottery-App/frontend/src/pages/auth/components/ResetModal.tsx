@@ -35,13 +35,13 @@ const ResetModal: React.FC<ResetModalProps> = ({ open, onClose, onReset }) => {
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item name="email" label="Enter your email address" rules={[{ required: true, type: 'email' }]}>
-          <Input placeholder="enter your email" style={{ borderRadius: 12 }} />
+          <Input placeholder="enter your email"/>
         </Form.Item>
         <div style={{ textAlign: 'right', gap: 8, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button type="primary" htmlType="submit" loading={loading} style={{ borderRadius: 12 }}>
+          <Button type="primary" htmlType="submit" loading={loading}>
             Send Request
           </Button>
-          <Button onClick={onClose} style={{ borderRadius: 12 }}>
+          <Button onClick={onClose}>
             Cancel
           </Button>
         </div>

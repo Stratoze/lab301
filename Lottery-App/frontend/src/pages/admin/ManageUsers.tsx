@@ -322,17 +322,17 @@ const ManageUsers: React.FC = () => {
           setKeyword(value);
           setPage(0);
         }}
-        style={{ width: 250, borderRadius: 2 }}
+        style={{ width: 250 }}
       />
 
       <Dropdown menu={bulkMenu} disabled={selectedRowKeys.length === 0}>
-        <Button style={{ borderRadius: 12 }}>
+        <Button>
           Actions <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown menu={exportMenu}>
-        <Button style={{ borderRadius: 12 }}>
+        <Button>
             Export <DownOutlined />
         </Button>
     </Dropdown>
@@ -349,7 +349,6 @@ const ManageUsers: React.FC = () => {
           setPage(0);
         }}
         allowClear
-        style={{ borderRadius: 12 }}
       />
       <div style={{ display: 'flex', gap: 8 }}>
         <Button
@@ -358,7 +357,7 @@ const ManageUsers: React.FC = () => {
             setIsBulkMode(!isBulkMode);
             setMobileSelectedIds([]);
           }}
-          style={{ flex: 1, borderRadius: 12 }}
+          style={{ flex: 1 }}
         >
           Bulk Action
         </Button>
@@ -368,7 +367,7 @@ const ManageUsers: React.FC = () => {
             addUserForm.resetFields();
             setIsAddModalOpen(true);
           }}
-          style={{ flex: 1, borderRadius: 12 }}
+          style={{ flex: 1 }}
         >
           Add New
         </Button>
@@ -378,7 +377,7 @@ const ManageUsers: React.FC = () => {
         value={sortBy}
         onChange={(value) => setSortBy(value)}
         suffixIcon={<DownOutlined />}
-        style={{ width: '100%', borderRadius: 8 }}
+        style={{ width: '100%' }}
         allowClear
         options={[
           { value: 'name_asc', label: 'Name A-Z' },
@@ -485,15 +484,15 @@ const ManageUsers: React.FC = () => {
         </div>
       )}
 
-      <Modal title="Edit User" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} style={{ borderRadius: 12 }} zIndex={1100}>
+      <Modal title="Edit User" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} zIndex={1100}>
         <Form form={form} layout="vertical" onFinish={onUpdateUser}>
           <Text type="secondary">User Code: {editingUser?.userCode}</Text><br/>
           <Text type="secondary">Email: {editingUser?.email}</Text>
           <Form.Item name="fullName" label="Full Name" style={{ marginTop: 16 }}>
-            <Input style={{ borderRadius: 2 }} />
+            <Input/>
           </Form.Item>
           <Form.Item name="role" label="Role">
-            <Select style={{ borderRadius: 12 }}>
+            <Select>
               <Select.Option value="ROLE_USER">USER</Select.Option>
               <Select.Option value="ROLE_ADMIN">ADMIN</Select.Option>
             </Select>
@@ -505,8 +504,8 @@ const ManageUsers: React.FC = () => {
             </Radio.Group>
           </Form.Item>
           <div style={{ textAlign: 'right', gap: 8, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setIsModalOpen(false)} style={{ borderRadius: 12 }}>Cancel</Button>
-            <Button type="primary" htmlType="submit" style={{ borderRadius: 12 }}>Save</Button>
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit">Save</Button>
           </div>
         </Form>
       </Modal>
@@ -520,10 +519,10 @@ const ManageUsers: React.FC = () => {
             ))}
           </div>
           <Form.Item name="subject" label="Subject" rules={[{ required: true }]} style={{ marginTop: 16 }}>
-            <Input placeholder="input subject here" style={{ borderRadius: 2 }} />
+            <Input placeholder="input subject here"/>
           </Form.Item>
           <Form.Item name="content" label="Content" rules={[{ required: true }]}>
-            <Input.TextArea placeholder="input content here" rows={4} style={{ borderRadius: 2 }} maxLength={500} showCount />
+            <Input.TextArea placeholder="input content here" rows={4}maxLength={500} showCount />
           </Form.Item>
         </Form>
       </Modal>
@@ -531,20 +530,20 @@ const ManageUsers: React.FC = () => {
       <Modal title="Add New User" open={isAddModalOpen} onCancel={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} footer={null} destroyOnHidden zIndex={1100}>
         <Form form={addUserForm} layout="vertical" onFinish={handleAddUser}>
           <Form.Item name="fullName" label="Full Name" rules={[{ required: true, message: 'Please enter full name' }]}>
-            <Input placeholder="Nguyen Van A" style={{ borderRadius: 8 }} />
+            <Input placeholder="Nguyen Van A" />
           </Form.Item>
           <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Invalid email format' }]}>
-            <Input placeholder="example@gmail.com" style={{ borderRadius: 12 }} />
+            <Input placeholder="example@gmail.com"/>
           </Form.Item>
           <Form.Item name="phone" label="Phone">
-            <Input placeholder="0123456789" style={{ borderRadius: 12 }} />
+            <Input placeholder="0123456789"/>
           </Form.Item>
           <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please enter password' }, { min: 10, message: 'Password must be at least 10 characters' }]}>
-            <Input.Password placeholder="At least 10 characters" style={{ borderRadius: 12 }} />
+            <Input.Password placeholder="At least 10 characters"/>
           </Form.Item>
           <div style={{ textAlign: 'right', gap: 8, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} style={{ borderRadius: 12 }}>Cancel</Button>
-            <Button type="primary" htmlType="submit" style={{ borderRadius: 20 }}>Create</Button>
+            <Button onClick={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }}>Cancel</Button>
+            <Button type="primary" htmlType="submit">Create</Button>
           </div>
         </Form>
       </Modal>
