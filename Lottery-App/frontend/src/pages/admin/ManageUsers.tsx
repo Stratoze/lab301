@@ -343,7 +343,7 @@ const ManageUsers: React.FC = () => {
     <>
       <Input
         placeholder="input search text"
-        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+        prefix={<SearchOutlined/>}
         onChange={(e) => {
           setKeyword(e.target.value);
           setPage(0);
@@ -469,9 +469,9 @@ const ManageUsers: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <Button icon={<CloseCircleFilled style={{ color: '#ff4d4f' }} />} onClick={() => handleBulkStatus(false)} disabled={mobileSelectedIds.length === 0}>Block</Button>
-          <Button icon={<CheckCircleFilled style={{ color: '#52c41a' }} />} onClick={() => handleBulkStatus(true)} disabled={mobileSelectedIds.length === 0}>Unblock</Button>
-          <Button icon={<MailFilled style={{ color: '#1677ff' }} />} onClick={() => setIsEmailModalOpen(true)} disabled={mobileSelectedIds.length === 0}>Email</Button>
+          <Button icon={<CloseCircleFilled color='red' />} onClick={() => handleBulkStatus(false)} disabled={mobileSelectedIds.length === 0}>Block</Button>
+          <Button icon={<CheckCircleFilled color='green' />} onClick={() => handleBulkStatus(true)} disabled={mobileSelectedIds.length === 0}>Unblock</Button>
+          <Button icon={<MailFilled color='blue'/>} onClick={() => setIsEmailModalOpen(true)} disabled={mobileSelectedIds.length === 0}>Email</Button>
           <Dropdown menu={{
             items: [
               { key: 'csv', label: 'CSV', onClick: () => handleExport('csv') },
@@ -479,7 +479,7 @@ const ManageUsers: React.FC = () => {
               { key: 'json', label: 'JSON', onClick: () => handleExport('json') },
             ]
           }} disabled={mobileSelectedIds.length === 0}>
-            <Button icon={<InfoCircleFilled style={{ color: '#1677ff' }} />} disabled={mobileSelectedIds.length === 0}>Export</Button>
+            <Button icon={<InfoCircleFilled color='blue' />} disabled={mobileSelectedIds.length === 0}>Export</Button>
           </Dropdown>
         </div>
       )}

@@ -85,7 +85,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         <Button
           icon={<FacebookFilled />}
           block
-          style={{ height: 40, backgroundColor: '#1877F2', color: '#fff' }}
+          style={{ height: 40, backgroundColor: 'blue', color: 'white' }}
           onClick={onFacebookLogin}
         >
           Continue with Facebook

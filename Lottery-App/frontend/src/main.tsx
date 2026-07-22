@@ -13,6 +13,11 @@ createRoot(document.getElementById('root')!).render(
     <GoogleOAuthProvider clientId={googleClientId}>
       <ConfigProvider
             theme={{
+              token: {
+                colorPrimary: '#1677ff',
+                colorBgBase: '#f9f5f5',      // Page / layout background
+                colorBgContainer: '#ffffff', // Cards, Modals, Inputs
+              },
               components: {
                 // Input controls: 2px radius
                 Input: { borderRadius: 2 },

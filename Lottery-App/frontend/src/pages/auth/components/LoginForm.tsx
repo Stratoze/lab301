@@ -65,8 +65,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
           block
           style={{ 
             height: 40, 
-            backgroundColor: '#1877F2', 
-            color: '#fff' 
+            backgroundColor: 'blue', 
+            color: 'white' 
           }}
           onClick={onFacebookLogin}
         >

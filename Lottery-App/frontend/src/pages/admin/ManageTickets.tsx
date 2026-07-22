@@ -204,7 +204,7 @@ const ManageTickets: React.FC = () => {
     <>
       <Input
         placeholder="input search text"
-        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+        prefix={<SearchOutlined/>}
         onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
         onPressEnter={triggerRefresh}
         allowClear

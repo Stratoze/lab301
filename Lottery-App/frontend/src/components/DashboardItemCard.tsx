@@ -52,8 +52,8 @@ const DashboardItemCard: React.FC<DashboardItemCardProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {details.map((d, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: '#1677ff', display: 'flex', alignItems: 'center' }}>{d.icon}</span>
-          <Text style={{ color: '#595959' }}>{d.label}: {d.value}</Text>
+          <span style={{ display: 'flex', alignItems: 'center' }}>{d.icon}</span>
+          <Text>{d.label}: {d.value}</Text>
         </div>
       ))}
     </div>

@@ -33,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
         style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
         onClick={() => navigate('/lottery')}
       >
-        <MoneyCollectOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+        <MoneyCollectOutlined style={{ fontSize: 24 }} />
         <Text strong style={{ fontSize: 16 }}>
           Lottery System
         </Text>

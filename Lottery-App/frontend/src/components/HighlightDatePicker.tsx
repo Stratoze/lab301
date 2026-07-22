@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { DatePicker } from 'antd';
+import { DatePicker, theme } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import apiClient from '../api/apiClient';
@@ -20,13 +20,16 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
   style,
   disableUnavailable = true,
 }) => {
+  const { token } = theme.useToken();
+
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [panelMode, setPanelMode] = useState<'year' | 'month' | 'date'>('date');
 
   useEffect(() => {
     if (!stationId) return;
-    apiClient.get('/checker/available-dates', { params: { stationId } })
-      .then(res => {
+    apiClient
+      .get('/checker/available-dates', { params: { stationId } })
+      .then((res) => {
         setAvailableDates(res.data.data || []);
       })
       .catch(() => {
@@ -67,60 +70,62 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
     return !availableDates.includes(current.format('YYYY-MM-DD'));
   };
 
-  const cellRender = (rawCurrent: Dayjs | string | number, info: { type: string; originNode: React.ReactElement }) => {
+  const cellRender = (
+    rawCurrent: Dayjs | string | number,
+    info: { type: string; originNode: React.ReactElement }
+  ) => {
     const current = dayjs(rawCurrent);
     if (!availableDates.length || !current.isValid()) return info.originNode;
+
+    const highlightStyle: React.CSSProperties = {
+      background: token.colorPrimaryBg,
+      color: token.colorPrimary,
+      fontWeight: 600,
+      padding: '2px 0',
+    };
 
     if (info.type === 'year') {
       const yearKey = current.format('YYYY');
       const has = dateInfoMap.has(yearKey);
       return (
-        <div
-          style={{
-            background: has ? '#e6f4ff' : undefined,
-            fontWeight: has ? 600 : undefined,
-            color: has ? '#1677ff' : undefined,
-            padding: '2px 0',
-          }}
-        >
+        <div style={has ? highlightStyle : undefined}>
           {info.originNode}
         </div>
       );
     }
+
     if (info.type === 'month') {
       const monthKey = current.format('YYYY-MM');
       let has = false;
-      for (const [, info] of dateInfoMap) {
-        if (info.monthSet.has(monthKey)) { has = true; break; }
+      for (const [, infoItem] of dateInfoMap) {
+        if (infoItem.monthSet.has(monthKey)) {
+          has = true;
+          break;
+        }
       }
       return (
-        <div
-          style={{
-            background: has ? '#e6f4ff' : undefined,
-            fontWeight: has ? 600 : undefined,
-            color: has ? '#1677ff' : undefined,
-            padding: '2px 0',
-          }}
-        >
+        <div style={has ? highlightStyle : undefined}>
           {info.originNode}
         </div>
       );
     }
+
     if (info.type === 'date') {
       const isAvailable = hasDate(current);
       return (
         <div
           style={{
-            background: isAvailable ? '#e6f4ff' : undefined,
+            background: isAvailable ? token.colorPrimaryBg : undefined,
+            color: isAvailable ? token.colorPrimary : undefined,
             borderRadius: isAvailable ? '50%' : undefined,
             fontWeight: isAvailable ? 700 : undefined,
-            color: isAvailable ? '#1677ff' : undefined,
           }}
         >
           {current.date()}
         </div>
       );
     }
+
     return info.originNode;
   };
 
