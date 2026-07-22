@@ -156,9 +156,19 @@ const LotteryNumberInput: React.FC<LotteryNumberInputProps> = ({
               e.preventDefault();
               handleDeleteChunk(idx);
             }}
-            icon={maxChunks > 1 ? <EditOutlined onClick={() => handleEditChunk(idx)} style={{ cursor: 'pointer' }} /> : undefined}
-            color={editingIndex === idx ? 'blue' : 'default'}
-            style={{ fontSize: 14, padding: '2px 8px' }}
+            icon={
+              maxChunks > 1 ? 
+              <EditOutlined onClick={() => 
+                handleEditChunk(idx)} 
+              /> : undefined}
+            style={{
+                fontSize: editingIndex === idx ?  16 : 14,
+                fontWeight:  editingIndex === idx ? 'bold' : 'normal',
+                padding: '2px 8px',
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: editingIndex === idx ? 'black': 'lightgrey' ,
+              }}
           >
             {chunk}
           </Tag>

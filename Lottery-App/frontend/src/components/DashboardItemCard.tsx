@@ -30,8 +30,8 @@ const DashboardItemCard: React.FC<DashboardItemCardProps> = ({
     onClick={onClick}
     style={{
       marginBottom: 12,
-      border: selected ? '1px solid #1677ff' : '1px solid #f0f0f0',
-      background: selected ? '#e6f4ff' : '#ffffff',
+      border: selected ? '1px solid blue' : '1px solid lightgrey',
+      background: selected ? '#e6f4ff' : 'white',
       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
       cursor: onClick ? 'pointer' : 'default',
       transition: 'all 0.2s',
@@ -42,9 +42,11 @@ const DashboardItemCard: React.FC<DashboardItemCardProps> = ({
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
       <Text strong style={{ fontSize: 15 }}>{title}</Text>
       {tags && (
-        <Space size={4} wrap>
+        <Space>
           {tags.map((t, i) => (
-            <Tag key={i} color={t.color} icon={t.icon}>{t.label}</Tag>
+            <Tag key={i} color={t.color} icon={t.icon}> 
+              {t.label} 
+            </Tag>
           ))}
         </Space>
       )}

@@ -225,14 +225,29 @@ const ManageTickets: React.FC = () => {
           { value: 'date_desc', label: 'Date Newest' },
         ]}
       />
-      <RangePicker
-        style={{ width: '100%' }}
-        onChange={(dates) => setFilters({
-          ...filters,
-          startDate: dates ? dates[0] : null,
-          endDate: dates ? dates[1] : null,
-        })}
-      />
+      <Space orientation="horizontal">
+        {/* Start Date Picker */}
+        <DatePicker
+          placeholder="Start Date"
+          value={filters.startDate}
+          onChange={(date) => setFilters({ ...filters, startDate: date })}
+          disabledDate={(current) => {
+            // Disable dates after the selected endDate
+            return filters.endDate ? current && current > filters.endDate : false;
+          }}
+        />
+
+        {/* End Date Picker */}
+        <DatePicker
+          placeholder="End Date"
+          value={filters.endDate}
+          onChange={(date) => setFilters({ ...filters, endDate: date })}
+          disabledDate={(current) => {
+            // Disable dates before the selected startDate
+            return filters.startDate ? current && current < filters.startDate : false;
+          }}
+        />
+      </Space>
       <Button
         type="primary"
         icon={<PlusOutlined />}

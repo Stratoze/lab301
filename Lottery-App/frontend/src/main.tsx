@@ -29,7 +29,7 @@ createRoot(document.getElementById('root')!).render(
                 Card: { borderRadiusLG: 12 },
                 Modal: { borderRadiusLG: 12 },
                 Drawer: { borderRadiusLG: 12 },
-                Tag: { borderRadius: 12},
+                Tag: { borderRadiusSM: 12},
               },
             }}
           >
