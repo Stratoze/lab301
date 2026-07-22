@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Button, Drawer, Menu } from 'antd';
+import { Layout, Button, Drawer } from 'antd';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
@@ -22,34 +22,37 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
     navigate('/auth');
   };
 
-  const menuItems = [
-    { key: '/account', icon: <span />, label: 'Account' },
-    { key: '/history', icon: <span />, label: 'History & Analytics' },
-    ...(role === 'ROLE_ADMIN'
-      ? [
-          { key: '/admin/users', icon: <span />, label: 'Manage Users' },
-          { key: '/admin/tickets', icon: <span />, label: 'Manage Tickets' },
-        ]
-      : []),
-  ];
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setMobileOpen(false); // Close mobile drawer on navigation
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* Header Bar */}
       <div style={{ zIndex: 1001, position: 'relative' }}>
         <Header>
           <Button
             className="mobile-hamburger-btn"
             type="text"
-            icon={mobileOpen ? <CloseOutlined style={{ fontSize: '20px' }} /> : <MenuOutlined style={{ fontSize: '20px' }} />}
+            icon={
+              mobileOpen ? (
+                <CloseOutlined style={{ fontSize: '20px' }} />
+              ) : (
+                <MenuOutlined style={{ fontSize: '20px' }} />
+              )
+            }
             onClick={() => setMobileOpen(!mobileOpen)}
           />
         </Header>
       </div>
 
-      <Layout 
-        id="sub-layout-container" 
+      {/* Main Body Layout */}
+      <Layout
+        id="sub-layout-container"
         style={{ flex: 1, overflow: 'hidden', position: 'relative', zIndex: 1 }}
       >
+        {/* Desktop Sidebar */}
         <Sider
           className="desktop-sider"
           theme="light"
@@ -62,58 +65,41 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
         >
           <Sidebar
             selectedKeys={[location.pathname]}
-            onNavigate={navigate}
+            onNavigate={handleNavigate}
             onLogout={handleLogout}
             role={role}
           />
         </Sider>
 
+        {/* Page Content */}
         <Content style={{ margin: '24px', overflowY: 'auto', height: '100%' }}>
           {children}
         </Content>
 
+        {/* Mobile Drawer - Reuses <Sidebar /> */}
         <Drawer
-          title={null}
           placement="left"
           closable={false}
-          mask={false}
+          mask={true}
           onClose={() => setMobileOpen(false)}
           open={mobileOpen}
-          getContainer={() => document.getElementById('sub-layout-container') || document.body}
+          getContainer={() =>
+            document.getElementById('sub-layout-container') || document.body
+          }
           rootStyle={{ position: 'absolute', zIndex: 1000, width: '100%' }}
           styles={{
-            body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
+            body: { padding: 0, height: '100%' },
           }}
         >
-          <Menu
-            mode="inline"
+          <Sidebar
             selectedKeys={[location.pathname]}
-            items={menuItems}
-            onClick={({ key }) => {
-              navigate(key);
+            onNavigate={handleNavigate}
+            onLogout={() => {
+              handleLogout();
               setMobileOpen(false);
             }}
-            /* Added paddingTop: '64px' here to offset the header height */
-            style={{ flex: 1, borderRight: 0, paddingTop: '64px' }}
+            role={role}
           />
-          <div
-            style={{
-              padding: '12px 16px',
-              borderTop: '1px solid #f0f0f0',
-            }}
-          >
-            <Button
-              type="text"
-              onClick={() => {
-                handleLogout();
-                setMobileOpen(false);
-              }}
-              style={{textAlign: 'left' }}
-              block
-            >
-              Logout
-            </Button>
-          </div>
         </Drawer>
       </Layout>
 
