@@ -1,6 +1,7 @@
 import React from 'react';
 import { MailOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons';
 import DashboardItemCard from './DashboardItemCard';
+import dayjs from 'dayjs';
 
 interface User {
   id: number;
@@ -32,8 +33,8 @@ const UserCard: React.FC<UserCardProps> = ({ user, selected, onClick, actions })
         icon: <ClockCircleOutlined />,
         label: 'Last Login',
         value: user.lastLogin
-          ? new Date(user.lastLogin).toLocaleString('vi-VN', { hour12: false })
-          : 'N/A',
+            ? dayjs(user.lastLogin).format('DD/MM/YYYY')
+            : 'N/A',
       },
       { icon: <UserOutlined />, label: 'User Code', value: user.userCode },
     ]}

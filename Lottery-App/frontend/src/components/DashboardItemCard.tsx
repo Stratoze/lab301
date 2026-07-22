@@ -45,7 +45,7 @@ const DashboardItemCard: React.FC<DashboardItemCardProps> = ({
       {tags && (
         <Space size={4} wrap>
           {tags.map((t, i) => (
-            <Tag key={i} color={t.color} style={{ borderRadius: 20 }} icon={t.icon}>{t.label}</Tag>
+            <Tag key={i} color={t.color} style={{ borderRadius: 12 }} icon={t.icon}>{t.label}</Tag>
           ))}
         </Space>
       )}

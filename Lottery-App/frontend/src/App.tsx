@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import routeConfig from './routes/routeConfig';
-import './App.css';
 
 function App() {
   return (

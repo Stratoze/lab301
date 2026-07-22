@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Table, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton } from 'antd';
 import { EditOutlined, DownOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserOutlined, StopOutlined, SearchOutlined, CheckCircleFilled, CloseCircleFilled, MailFilled, InfoCircleFilled, SendOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import apiClient from '../../api/apiClient';
 import DashboardCard from '../../components/DashboardCard';
 import CardList from '../../components/CardList';
@@ -36,26 +37,39 @@ const ManageUsers: React.FC = () => {
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const [loginFilter, setLoginFilter] = useState<string | undefined>(undefined);
   const [refreshTick, setRefreshTick] = useState(0);
-
   const triggerRefresh = () => setRefreshTick(t => t + 1);
 
+  const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const pageSize = 20;
+
   useEffect(() => {
-    const loadUsers = async (keyword = '') => {
+    const loadUsers = async () => {
       setLoading(true);
+
       try {
-        const params: Record<string, unknown> = {};
+        const params: Record<string, unknown> = {
+          page,
+          size: pageSize,
+        };
+
         if (keyword) params.keyword = keyword;
         if (loginFilter) params.loginFilter = loginFilter;
+
         const response = await apiClient.get('/admin/users', { params });
+
         setData(response.data.data.content);
+        setTotal(response.data.data.totalElements || 0);
       } catch {
         message.error('Failed to load users');
       } finally {
         setLoading(false);
       }
     };
+
     loadUsers();
-  }, [loginFilter, refreshTick]);
+  }, [keyword, page, loginFilter, refreshTick]);
 
   const sortedUsers = useMemo(() => {
     if (!sortBy) return data;
@@ -149,8 +163,8 @@ const ManageUsers: React.FC = () => {
           <Tag icon={<UserOutlined />} color="blue">{record.role === 'ROLE_ADMIN' ? 'Admin' : 'User'}</Tag>
           <Tag icon={<ClockCircleOutlined />} color="default">
             {record.lastLogin
-              ? new Date(record.lastLogin).toLocaleString('vi-VN', { hour12: false })
-              : 'Never'}
+                ? dayjs(record.lastLogin).format('DD/MM/YYYY')
+                : 'Never'}
           </Tag>
           {!record.isActive && (
             <Tag icon={<StopOutlined />} color="red">Blocked</Tag>
@@ -173,7 +187,12 @@ const ManageUsers: React.FC = () => {
         ? mobileSelectedIds 
         : selectedRowKeys.map(Number);
       const params: Record<string, unknown> = { format };
-      if (idsToExport.length > 0) params.ids = idsToExport;
+
+      if (idsToExport.length > 0) {
+        params.ids = idsToExport;
+      } else if (keyword) {
+        params.keyword = keyword;
+      }
       const responseType = format === 'json' ? 'json' : 'blob';
       const response = await apiClient.get('/admin/users/export', { params, responseType });
       if (format === 'json') {
@@ -268,6 +287,14 @@ const ManageUsers: React.FC = () => {
     ],
   };
 
+  const exportMenu = {
+    items: [
+        { key: 'export-csv', label: 'CSV', onClick: () => handleExport('csv') },
+        { key: 'export-excel', label: 'Excel', onClick: () => handleExport('excel') },
+        { key: 'export-json', label: 'JSON', onClick: () => handleExport('json') },
+    ],
+  };
+
   const desktopControls = (
     <Space>
       <Select
@@ -280,23 +307,35 @@ const ManageUsers: React.FC = () => {
         allowClear
         style={{ width: 160 }}
         options={[
-          { value: '24h', label: 'Within 24 hours' },
-          { value: '1m', label: 'Within 1 month' },
-          { value: '3m', label: 'Within 3 months' },
-          { value: '6m', label: 'Within 6 months' },
-          { value: '1y', label: 'Within 1 year' },
+            { value: 'inactive-1w', label: 'Inactive for 1 week' },
+            { value: 'inactive-1m', label: 'Inactive for 1 month' },
+            { value: 'inactive-3m', label: 'Inactive for 3 months' },
+            { value: 'inactive-6m', label: 'Inactive for 6 months' },
+            { value: 'inactive-1y', label: 'Inactive for 1 year' },
         ]}
       />
-      <Input.Search 
-        placeholder="email/phone/usercode" 
-        onSearch={() => triggerRefresh()}
-        style={{ width: 250, borderRadius: 2 }} 
+
+      <Input.Search
+        placeholder="email/phone/usercode"
+        allowClear
+        onSearch={(value) => {
+          setKeyword(value);
+          setPage(0);
+        }}
+        style={{ width: 250, borderRadius: 2 }}
       />
+
       <Dropdown menu={bulkMenu} disabled={selectedRowKeys.length === 0}>
         <Button style={{ borderRadius: 12 }}>
           Actions <DownOutlined />
         </Button>
       </Dropdown>
+
+      <Dropdown menu={exportMenu}>
+        <Button style={{ borderRadius: 12 }}>
+            Export <DownOutlined />
+        </Button>
+    </Dropdown>
     </Space>
   );
 
@@ -305,9 +344,12 @@ const ManageUsers: React.FC = () => {
       <Input
         placeholder="input search text"
         prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-        onChange={() => triggerRefresh()}
+        onChange={(e) => {
+          setKeyword(e.target.value);
+          setPage(0);
+        }}
         allowClear
-        style={{ borderRadius: 8 }}
+        style={{ borderRadius: 12 }}
       />
       <div style={{ display: 'flex', gap: 8 }}>
         <Button
@@ -316,7 +358,7 @@ const ManageUsers: React.FC = () => {
             setIsBulkMode(!isBulkMode);
             setMobileSelectedIds([]);
           }}
-          style={{ flex: 1, borderRadius: 20 }}
+          style={{ flex: 1, borderRadius: 12 }}
         >
           Bulk Action
         </Button>
@@ -326,7 +368,7 @@ const ManageUsers: React.FC = () => {
             addUserForm.resetFields();
             setIsAddModalOpen(true);
           }}
-          style={{ flex: 1, borderRadius: 20 }}
+          style={{ flex: 1, borderRadius: 12 }}
         >
           Add New
         </Button>
@@ -360,13 +402,18 @@ const ManageUsers: React.FC = () => {
           {loading && data.length === 0 ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <Table 
+            <Table
               rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
-              columns={columns} 
-              dataSource={data} 
-              rowKey="id" 
+              columns={columns}
+              dataSource={data}
+              rowKey="id"
               loading={loading}
-              pagination={{ pageSize: 20 }}
+              pagination={{
+                current: page + 1,
+                pageSize,
+                total,
+                onChange: (p) => setPage(p - 1),
+              }}
               locale={{ emptyText: 'No users found' }}
             />
           )}
@@ -487,16 +534,16 @@ const ManageUsers: React.FC = () => {
             <Input placeholder="Nguyen Van A" style={{ borderRadius: 8 }} />
           </Form.Item>
           <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Invalid email format' }]}>
-            <Input placeholder="example@gmail.com" style={{ borderRadius: 8 }} />
+            <Input placeholder="example@gmail.com" style={{ borderRadius: 12 }} />
           </Form.Item>
           <Form.Item name="phone" label="Phone">
-            <Input placeholder="0123456789" style={{ borderRadius: 8 }} />
+            <Input placeholder="0123456789" style={{ borderRadius: 12 }} />
           </Form.Item>
           <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please enter password' }, { min: 10, message: 'Password must be at least 10 characters' }]}>
-            <Input.Password placeholder="At least 10 characters" style={{ borderRadius: 8 }} />
+            <Input.Password placeholder="At least 10 characters" style={{ borderRadius: 12 }} />
           </Form.Item>
           <div style={{ textAlign: 'right', gap: 8, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} style={{ borderRadius: 20 }}>Cancel</Button>
+            <Button onClick={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} style={{ borderRadius: 12 }}>Cancel</Button>
             <Button type="primary" htmlType="submit" style={{ borderRadius: 20 }}>Create</Button>
           </div>
         </Form>

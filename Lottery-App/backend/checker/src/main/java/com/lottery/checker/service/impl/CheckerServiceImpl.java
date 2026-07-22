@@ -1,14 +1,25 @@
 package com.lottery.checker.service.impl;
 
-import com.lottery.checker.entity.*;
-import com.lottery.checker.repository.*;
+import com.lottery.checker.entity.CheckHistory;
+import com.lottery.checker.entity.CheckSession;
+import com.lottery.checker.entity.LotteryResult;
+import com.lottery.checker.entity.PrizeDetail;
+import com.lottery.checker.entity.User;
+import com.lottery.checker.repository.CheckHistoryRepository;
+import com.lottery.checker.repository.CheckSessionRepository;
+import com.lottery.checker.repository.LotteryResultRepository;
+import com.lottery.checker.repository.UserRepository;
 import com.lottery.checker.service.CheckerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,27 +32,42 @@ public class CheckerServiceImpl implements CheckerService {
 
     @Override
     @Transactional
-    public Map<String, Object> checkTickets(Integer stationId, LocalDate date, List<String> numbers, String userEmail) {
-        LotteryResult result = resultRepository.searchTickets(stationId, date, date, null, null)
-                .getContent().stream()
-                .filter(r -> r.getStatus().equals("PUBLISH"))
-                .findFirst()
+    public Map<String, Object> checkTickets(
+            Integer stationId,
+            LocalDate date,
+            List<String> numbers,
+            String userEmail
+    ) {
+        LotteryResult result = resultRepository
+                .findByStationIdAndDrawDate(stationId, date)
+                .filter(r -> "PUBLISH".equals(r.getStatus()))
                 .orElseThrow(() -> new RuntimeException("No published results found for this date."));
 
-        User user = (userEmail != null) ? userRepository.findByEmail(userEmail).orElse(null) : null;
-        
-        // --- DUPLICATE CHECK for logged-in users ---
+        User user = userEmail != null
+                ? userRepository.findByEmail(userEmail).orElse(null)
+                : null;
+
         if (user != null) {
             List<String> duplicates = new ArrayList<>();
+
             for (String num : numbers) {
                 String clean = num.trim();
-                if (checkHistoryRepository.existsByUserAndResultAndTicket(user.getId(), result.getId(), clean)) {
+
+                if (checkHistoryRepository.existsByUserAndResultAndTicket(
+                        user.getId(),
+                        result.getId(),
+                        clean
+                )) {
                     duplicates.add(clean);
                 }
             }
+
             if (!duplicates.isEmpty()) {
-                throw new RuntimeException("You have already checked ticket(s): " + String.join(", ", duplicates) + 
-                    " for this draw. Each ticket can only be checked once.");
+                throw new RuntimeException(
+                        "You have already checked ticket(s): " +
+                        String.join(", ", duplicates) +
+                        " for this draw. Each ticket can only be checked once."
+                );
             }
         }
 
@@ -55,10 +81,12 @@ public class CheckerServiceImpl implements CheckerService {
 
         for (String num : numbers) {
             String cleanNum = num.trim();
+
             PrizeDetail winningPrize = findBestPrize(result.getPrizeDetails(), cleanNum);
-            
+
             boolean isWon = winningPrize != null;
             long amount = isWon ? winningPrize.getRewardAmount() : 0;
+
             totalWon += amount;
 
             CheckHistory history = CheckHistory.builder()
@@ -69,27 +97,29 @@ public class CheckerServiceImpl implements CheckerService {
                     .wonPrize(isWon ? winningPrize.getPrizeType() : null)
                     .wonAmount(amount)
                     .build();
-            
+
             session.getHistories().add(history);
-            
+
             detailResults.add(Map.of(
-                "number", cleanNum,
-                "isWon", isWon,
-                "prize", isWon ? winningPrize.getPrizeType() : "None",
-                "amount", amount
+                    "number", cleanNum,
+                    "isWon", isWon,
+                    "prize", isWon ? winningPrize.getPrizeType() : "None",
+                    "amount", amount
             ));
         }
 
         session.setTotalWon(totalWon);
         sessionRepository.save(session);
 
-        // Update total queries for ticket
         result.setTotalQueries(result.getTotalQueries() + 1);
         resultRepository.save(result);
 
         return Map.of(
-            "summary", Map.of("totalSpent", session.getTotalSpent(), "totalWon", totalWon),
-            "details", detailResults
+                "summary", Map.of(
+                        "totalSpent", session.getTotalSpent(),
+                        "totalWon", totalWon
+                ),
+                "details", detailResults
         );
     }
 
@@ -106,26 +136,53 @@ public class CheckerServiceImpl implements CheckerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> getUserHistory(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        List<CheckSession> sessions = sessionRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId());
-        
-        return sessions.stream().map(s -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", s.getId());
-            map.put("date", s.getCreatedAt());
-            map.put("totalSpent", s.getTotalSpent());
-            map.put("totalWon", s.getTotalWon());
-            map.put("tickets", s.getHistories().stream().map(h -> Map.of(
-                "number", h.getTicketNumber(),
-                "isWon", h.getIsWon(),
-                "prize", h.getWonPrize() != null ? h.getWonPrize() : "No Prize",
-                "amount", h.getWonAmount(),
-                "station", h.getResult().getStation().getName()
-            )).toList());
-            return map;
-        }).toList();
+
+        List<CheckSession> sessions =
+                sessionRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId());
+
+        return sessions.stream()
+                .map(session -> {
+                    Map<String, Object> map = new HashMap<>();
+
+                    map.put("id", session.getId());
+                    map.put("date", session.getCreatedAt());
+                    map.put("totalSpent", session.getTotalSpent());
+                    map.put("totalWon", session.getTotalWon());
+
+                    List<Map<String, Object>> tickets = session.getHistories().stream()
+                            .map(history -> {
+                                Map<String, Object> ticket = new HashMap<>();
+
+                                ticket.put("number", history.getTicketNumber());
+                                ticket.put("isWon", history.getIsWon());
+                                ticket.put(
+                                        "prize",
+                                        history.getWonPrize() != null
+                                                ? history.getWonPrize()
+                                                : "No Prize"
+                                );
+                                ticket.put("amount", history.getWonAmount());
+                                ticket.put("station", history.getResult().getStation().getName());
+                                ticket.put("drawDate", history.getResult().getDrawDate());
+                                ticket.put(
+                                        "checkTime",
+                                        history.getCheckTime() != null
+                                                ? history.getCheckTime()
+                                                : session.getCreatedAt()
+                                );
+
+                                return ticket;
+                            })
+                            .toList();
+
+                    map.put("tickets", tickets);
+
+                    return map;
+                })
+                .toList();
     }
 }

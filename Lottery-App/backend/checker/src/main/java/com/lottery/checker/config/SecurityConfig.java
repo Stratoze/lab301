@@ -56,7 +56,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/password/forgot", "/api/v1/password/reset").permitAll()
+                .requestMatchers(
+        "/api/v1/password/forgot",
+                    "/api/v1/password/reset",
+                    "/api/v1/password/validate"
+                ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/tickets/stations").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/checker/available-dates").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/checker/check").permitAll()

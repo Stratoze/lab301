@@ -78,7 +78,7 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
         <div
           style={{
             background: has ? '#e6f4ff' : undefined,
-            borderRadius: 6,
+            borderRadius: 12,
             fontWeight: has ? 600 : undefined,
             color: has ? '#1677ff' : undefined,
             padding: '2px 0',
@@ -98,7 +98,7 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
         <div
           style={{
             background: has ? '#e6f4ff' : undefined,
-            borderRadius: 6,
+            borderRadius: 12,
             fontWeight: has ? 600 : undefined,
             color: has ? '#1677ff' : undefined,
             padding: '2px 0',

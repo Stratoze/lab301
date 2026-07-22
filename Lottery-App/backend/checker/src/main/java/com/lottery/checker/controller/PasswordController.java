@@ -26,4 +26,15 @@ public class PasswordController {
         userService.resetPassword(body.get("token"), body.get("newPassword"));
         return ResponseEntity.ok(ApiResponse.success("Password has been reset successfully."));
     }
+    
+    @GetMapping("/validate")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> validateResetToken(
+            @RequestParam("token") String resetCode
+    ) {
+        boolean valid = userService.isResetTokenValid(resetCode);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(Map.of("valid", valid))
+        );
+    }
 }

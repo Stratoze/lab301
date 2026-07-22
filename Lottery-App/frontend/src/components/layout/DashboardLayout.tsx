@@ -108,7 +108,7 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
                 handleLogout();
                 setMobileOpen(false);
               }}
-              style={{ color: '#ff4d4f', borderRadius: 8, textAlign: 'left' }}
+              style={{ color: '#ff4d4f', borderRadius: 12, textAlign: 'left' }}
               block
             >
               Logout

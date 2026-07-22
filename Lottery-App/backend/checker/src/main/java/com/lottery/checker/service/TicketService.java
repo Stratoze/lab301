@@ -10,8 +10,22 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface TicketService {
+
     List<LotteryStation> getAllStations();
-    TicketResponse createOrUpdateTicket(CreateTicketRequest request);
-    PagedResponse<TicketResponse> searchTickets(Integer stationId, LocalDate start, LocalDate end, String keyword, Pageable pageable);
+
+    TicketResponse createTicket(CreateTicketRequest request, String adminEmail);
+
+    TicketResponse updateTicket(Long id, CreateTicketRequest request, String adminEmail);
+
+    PagedResponse<TicketResponse> searchTickets(
+            Integer stationId,
+            LocalDate start,
+            LocalDate end,
+            String keyword,
+            Pageable pageable
+    );
+
     void updateStatus(Long id, String status);
+
+    void updateStatus(Long id, String status, String adminEmail);
 }

@@ -14,20 +14,23 @@ import java.util.Optional;
 
 @Repository
 public interface LotteryResultRepository extends JpaRepository<LotteryResult, Long> {
-    
+
     Optional<LotteryResult> findByResultCode(String resultCode);
 
+    Optional<LotteryResult> findByStationIdAndDrawDate(Integer stationId, LocalDate drawDate);
+
     @Query("SELECT r FROM LotteryResult r WHERE " +
-           "(:stationId IS NULL OR r.station.id = :stationId) AND " +
-           "(:startDate IS NULL OR r.drawDate >= :startDate) AND " +
-           "(:endDate IS NULL OR r.drawDate <= :endDate) AND " +
-           "(:keyword IS NULL OR LOWER(r.resultCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "(:stationId IS NULL OR r.station.id = :stationId) AND " +
+            "(:startDate IS NULL OR r.drawDate >= :startDate) AND " +
+            "(:endDate IS NULL OR r.drawDate <= :endDate) AND " +
+            "(:keyword IS NULL OR LOWER(r.resultCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<LotteryResult> searchTickets(
             @Param("stationId") Integer stationId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             @Param("keyword") String keyword,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     @Query("SELECT DISTINCT r.drawDate FROM LotteryResult r WHERE r.station.id = :stationId AND r.status = 'PUBLISH' ORDER BY r.drawDate")
     List<LocalDate> findDrawDatesByStation(@Param("stationId") Integer stationId);

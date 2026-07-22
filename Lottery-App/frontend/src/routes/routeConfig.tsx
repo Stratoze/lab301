@@ -16,6 +16,7 @@ import ManageUsers from '../pages/admin/ManageUsers';
 import ManageTickets from '../pages/admin/ManageTickets';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import PublicHeader from '../components/layout/PublicHeader';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 
 const routeConfig: RouteConfig[] = [
   {
@@ -47,6 +48,10 @@ const routeConfig: RouteConfig[] = [
     element: <DashboardLayout><ManageTickets /></DashboardLayout>,
     protected: true,
     adminOnly: true,
+  },
+  {
+    path: '/reset-password',
+    element: <><PublicHeader /><ResetPasswordPage /></>,
   },
 ];
 

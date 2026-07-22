@@ -12,6 +12,7 @@ interface Station {
 }
 
 export interface TicketData {
+  id?: number;
   stationName: string;
   drawDate: string;
   status: string;
@@ -87,9 +88,22 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
     })).filter(p => p.winningNumbers.trim() !== '');
 
     // Count validation for multi-entry prizes
+    const prizeTypeToField: Record<string, keyof typeof prizeConfig> = {
+      G_DB: 'g_db',
+      G1: 'g1',
+      G2: 'g2',
+      G3: 'g3',
+      G4: 'g4',
+      G5: 'g5',
+      G6: 'g6',
+      G7: 'g7',
+      G8: 'g8',
+    };
+
     for (const p of prizes) {
       const nums = p.winningNumbers.split(',').filter((n: string) => n.trim());
-      const config = prizeConfig[p.type.toLowerCase().replace('g', 'g_') as keyof typeof prizeConfig];
+      const config = prizeConfig[prizeTypeToField[p.type]];
+
       if (config && nums.length !== config.maxChunks) {
         return message.error(`${config.label} must have exactly ${config.maxChunks} number(s). Found ${nums.length}.`);
       }
@@ -132,18 +146,25 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
     }
 
     try {
-      await apiClient.post('/admin/tickets', {
+      const payload = {
         stationId: values.stationId,
         drawDate: (values.drawDate as unknown as dayjs.Dayjs).format('YYYY-MM-DD'),
         status: values.status,
         prizes,
-      });
+      };
+
+      if (ticket?.id) {
+        await apiClient.put(`/admin/tickets/${ticket.id}`, payload);
+      } else {
+        await apiClient.post('/admin/tickets', payload);
+      }
+
       message.success('Ticket saved successfully');
       onSuccess();
       onClose();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } } };
-      const errorMsg = err.response?.data?.message || 'Failed to save ticket (Potential duplicate date/station)';
+      const errorMsg = err.response?.data?.message || 'Failed to save ticket';
       message.error(errorMsg);
     }
   };

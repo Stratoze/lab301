@@ -3,7 +3,7 @@ import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, S
 import { EditOutlined, PlusOutlined, EyeOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import dayjs from 'dayjs';
-import AddTicketModal, { type TicketData } from './components/AddTicketModal';
+import AddTicketModal from './components/AddTicketModal';
 import DashboardCard from '../../components/DashboardCard';
 import CardList from '../../components/CardList';
 import TicketCard from '../../components/TicketCard';
@@ -17,6 +17,11 @@ interface TicketRow {
   drawDate: string;
   status: string;
   totalQueries: number;
+  prizes?: Array<{
+    type: string;
+    winningNumber: string;
+    rewardAmount?: number;
+  }>;
 }
 
 const ManageTickets: React.FC = () => {
@@ -41,8 +46,11 @@ const ManageTickets: React.FC = () => {
   });
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const [refreshTick, setRefreshTick] = useState(0);
-
   const triggerRefresh = () => setRefreshTick(t => t + 1);
+
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
     apiClient.get('/admin/tickets/stations')
@@ -53,7 +61,12 @@ const ManageTickets: React.FC = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       setLoading(true);
-      const params: Record<string, unknown> = {};
+
+      const params: Record<string, unknown> = {
+        page,
+        size: pageSize,
+      };
+
       if (filters.stationId) params.stationId = filters.stationId;
       if (filters.startDate) params.startDate = (filters.startDate as dayjs.Dayjs).format('YYYY-MM-DD');
       if (filters.endDate) params.endDate = (filters.endDate as dayjs.Dayjs).format('YYYY-MM-DD');
@@ -61,15 +74,18 @@ const ManageTickets: React.FC = () => {
 
       try {
         const response = await apiClient.get('/admin/tickets', { params });
+
         setData(response.data.data.content);
+        setTotal(response.data.data.totalElements || 0);
       } catch {
         message.error('Failed to load tickets');
       } finally {
         setLoading(false);
       }
     };
+
     fetchTickets();
-  }, [filters, refreshTick]);
+  }, [filters, page, refreshTick]);
 
   const sortedData = useMemo(() => {
     if (!sortBy) return data;
@@ -193,12 +209,12 @@ const ManageTickets: React.FC = () => {
         onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
         onPressEnter={triggerRefresh}
         allowClear
-        style={{ borderRadius: 8 }}
+        style={{ borderRadius: 12 }}
       />
       <Select
         placeholder="Sort By"
         suffixIcon={<DownOutlined />}
-        style={{ width: '100%', borderRadius: 8 }}
+        style={{ width: '100%', borderRadius: 12 }}
         allowClear
         value={sortBy}
         onChange={(val) => setSortBy(val)}
@@ -212,7 +228,7 @@ const ManageTickets: React.FC = () => {
         ]}
       />
       <RangePicker
-        style={{ width: '100%', borderRadius: 8 }}
+        style={{ width: '100%', borderRadius: 12 }}
         onChange={(dates) => setFilters({
           ...filters,
           startDate: dates ? dates[0] : null,
@@ -223,7 +239,7 @@ const ManageTickets: React.FC = () => {
         type="primary"
         icon={<PlusOutlined />}
         onClick={() => { setEditingTicket(null); setIsModalOpen(true); }}
-        style={{ borderRadius: 20 }}
+        style={{ borderRadius: 12 }}
         block
       >
         Add New Ticket
@@ -245,9 +261,15 @@ const ManageTickets: React.FC = () => {
           ) : (
             <Table
               columns={columns}
-              dataSource={sortedData} /* Updated to use sortedData */
+              dataSource={sortedData}
               rowKey="id"
               loading={loading}
+              pagination={{
+                current: page + 1,
+                pageSize,
+                total,
+                onChange: (p) => setPage(p - 1),
+              }}
               locale={{ emptyText: 'No tickets found' }}
             />
           )}
@@ -266,7 +288,17 @@ const ManageTickets: React.FC = () => {
       <AddTicketModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        ticket={editingTicket as unknown as TicketData}
+        ticket={
+          editingTicket
+            ? {
+                id: editingTicket.id,
+                stationName: editingTicket.stationName,
+                drawDate: editingTicket.drawDate,
+                status: editingTicket.status,
+                prizes: editingTicket.prizes || [],
+              }
+            : undefined
+        }
         stations={stations}
         onSuccess={triggerRefresh}
       />

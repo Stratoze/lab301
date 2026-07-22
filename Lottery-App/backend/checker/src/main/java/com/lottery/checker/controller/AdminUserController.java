@@ -26,23 +26,35 @@ public class AdminUserController {
 
     private final UserService userService;
 
+    private List<Long> extractIds(Object rawIds) {
+    if (!(rawIds instanceof List<?> list)) {
+        throw new RuntimeException("User ids are required");
+    }
+
+    return list.stream()
+            .filter(java.util.Objects::nonNull)
+            .map(id -> ((Number) id).longValue())
+            .toList();
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getUsers(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String loginFilter,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
+            @RequestParam(defaultValue = "20") int size
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers(keyword, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers(keyword, loginFilter, pageable)));
     }
 
     @PatchMapping("/status")
     public ResponseEntity<ApiResponse<String>> updateStatus(@RequestBody Map<String, Object> payload) {
-        List<Integer> idInts = (List<Integer>) payload.get("ids");
-        List<Long> ids = idInts.stream().map(Integer::longValue).toList();
-        boolean isActive = (boolean) payload.get("isActive");
-        
+        List<Long> ids = extractIds(payload.get("ids"));
+        boolean isActive = Boolean.TRUE.equals(payload.get("isActive"));
+
         userService.updateStatus(ids, isActive);
+
         return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
     }
 
@@ -62,11 +74,13 @@ public class AdminUserController {
 
     @PostMapping("/send-email")
     public ResponseEntity<ApiResponse<String>> sendEmail(@RequestBody Map<String, Object> payload) {
-        List<Integer> idInts = (List<Integer>) payload.get("ids");
-        List<Long> ids = idInts.stream().map(Integer::longValue).toList();
+        List<Long> ids = extractIds(payload.get("ids"));
+
         String subject = (String) payload.get("subject");
         String content = (String) payload.get("content");
+
         userService.sendBulkEmail(ids, subject, content);
+
         return ResponseEntity.ok(ApiResponse.success("Emails sent successfully"));
     }
 
@@ -79,7 +93,7 @@ public class AdminUserController {
         if (ids != null && !ids.isEmpty()) {
             users = userService.getUsersByIds(ids);
         } else {
-            users = userService.getAllUsers(keyword, Pageable.unpaged()).getContent();
+            users = userService.getAllUsers(keyword, null, Pageable.unpaged()).getContent();
         }
 
         return switch (format.toLowerCase()) {
@@ -107,19 +121,22 @@ public class AdminUserController {
 
     private byte[] generateCsv(List<UserResponse> users) {
         StringBuilder csv = new StringBuilder();
-        csv.append("User Code,Full Name,Email,Phone,Role,Status,Last Login,Created At%n");
+
+        csv.append("User Code,Full Name,Email,Phone,Role,Status,Last Login,Created At\n");
+
         for (UserResponse u : users) {
             csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s%n",
-                escapeCsv(u.userCode()),
-                escapeCsv(u.fullName()),
-                escapeCsv(u.email()),
-                escapeCsv(u.phone() != null ? u.phone() : ""),
-                u.role().name(),
-                u.isActive() ? "Active" : "Blocked",
-                u.lastLogin() != null ? u.lastLogin().toString() : "Never",
-                u.createdAt() != null ? u.createdAt().toString() : ""
+                    escapeCsv(u.userCode()),
+                    escapeCsv(u.fullName()),
+                    escapeCsv(u.email()),
+                    escapeCsv(u.phone() != null ? u.phone() : ""),
+                    u.role().name(),
+                    u.isActive() ? "Active" : "Blocked",
+                    u.lastLogin() != null ? u.lastLogin().toString() : "Never",
+                    u.createdAt() != null ? u.createdAt().toString() : ""
             ));
         }
+
         return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 

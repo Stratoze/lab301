@@ -14,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -37,22 +38,49 @@ public class AdminTicketController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        
+            @RequestParam(defaultValue = "10") int size
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(ApiResponse.success(ticketService.searchTickets(stationId, startDate, endDate, keyword, pageable)));
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        ticketService.searchTickets(stationId, startDate, endDate, keyword, pageable)
+                )
+        );
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<TicketResponse>> createTicket(@Valid @RequestBody CreateTicketRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(ticketService.createOrUpdateTicket(request)));
+    public ResponseEntity<ApiResponse<TicketResponse>> createTicket(
+            @Valid @RequestBody CreateTicketRequest request,
+            Principal principal
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        ticketService.createTicket(request, principal.getName())
+                )
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<TicketResponse>> updateTicket(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateTicketRequest request,
+            Principal principal
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        ticketService.updateTicket(id, request, principal.getName())
+                )
+        );
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<String>> updateStatus(
-            @PathVariable Long id, 
-            @RequestBody Map<String, String> payload) {
-        ticketService.updateStatus(id, payload.get("status"));
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload,
+            Principal principal
+    ) {
+        ticketService.updateStatus(id, payload.get("status"), principal.getName());
         return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
     }
 }

@@ -101,7 +101,6 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
     // ── GOOGLE: proper JWT signature + aud/iss validation ──
 
-    @SuppressWarnings("unchecked")
     private SocialUserInfo verifyGoogleToken(String idToken) {
         // 1. Decode header to get key ID (kid)
         String[] parts = idToken.split("\\.");
