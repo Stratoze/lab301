@@ -21,7 +21,7 @@ const CheckerResults: React.FC<CheckerResultsProps> = ({ results, isGuest }) => 
       {results.details.map((res, i) => (
         <Alert
           key={i}
-          style={{ marginBottom: 12, borderRadius: 12 }}
+          style={{ marginBottom: 12 }}
           title={`Ticket: ${res.number}`}
           description={
             res.isWon
@@ -37,7 +37,6 @@ const CheckerResults: React.FC<CheckerResultsProps> = ({ results, isGuest }) => 
                 size="small"
                 type="primary"
                 icon={<FacebookFilled />}
-                style={{ borderRadius: 12 }}
                 onClick={() => {
                   const shareUrl =
                     `https://www.facebook.com/sharer/sharer.php?u=` +
@@ -60,7 +59,6 @@ const CheckerResults: React.FC<CheckerResultsProps> = ({ results, isGuest }) => 
         type="info"
         showIcon
         icon={<InfoCircleOutlined />}
-        style={{ borderRadius: 12 }}
       />
     </div>
   );

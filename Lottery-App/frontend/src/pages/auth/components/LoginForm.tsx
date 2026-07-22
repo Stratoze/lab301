@@ -30,10 +30,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <Form layout="vertical" onFinish={onFinish}>
       <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Please input email!' }]}>
-        <Input prefix={<UserOutlined />} placeholder="Email" style={{ borderRadius: 12 }} />
+        <Input prefix={<UserOutlined />} placeholder="Email"/>
       </Form.Item>
       <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please input password!' }]}>
-        <Input.Password prefix={<LockOutlined />} placeholder="Password" style={{ borderRadius: 12 }} />
+        <Input.Password prefix={<LockOutlined />} placeholder="Password"/>
       </Form.Item>
       <div style={{ marginBottom: 16, textAlign: 'right' }}>
         <a href="#" onClick={(e) => { e.preventDefault(); onForgotPassword(); }}>
@@ -41,7 +41,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
         </a>
       </div>
       <Form.Item>
-        <Button type="primary" htmlType="submit" loading={loading} block style={{ borderRadius: 12, height: 40 }}>
+        <Button 
+          type="primary" 
+          htmlType="submit" 
+          loading={loading} 
+          block style={{ height: 40 }}
+        >
           Sign In
         </Button>
       </Form.Item>
@@ -53,13 +58,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
           }}
           onError={() => message.error('Google login failed')}
           size="large"
-          shape="pill"
           width="100%"
         />
         <Button
           icon={<FacebookFilled />}
           block
-          style={{ borderRadius: 12, height: 40, backgroundColor: '#1877F2', color: '#fff' }}
+          style={{ 
+            height: 40, 
+            backgroundColor: '#1877F2', 
+            color: '#fff' 
+          }}
           onClick={onFacebookLogin}
         >
           Continue with Facebook

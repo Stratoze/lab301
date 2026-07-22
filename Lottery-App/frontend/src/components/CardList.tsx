@@ -42,7 +42,7 @@ const CardList: React.FC<CardListProps> = ({
           value={sortBy}
           onChange={onSortChange}
           suffixIcon={<DownOutlined />}
-          style={{ width: '100%', marginBottom: 16, borderRadius: 12 }}
+          style={{ width: '100%', marginBottom: 16}}
           options={sortOptions}
         />
       )}

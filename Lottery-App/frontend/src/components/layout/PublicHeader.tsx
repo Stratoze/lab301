@@ -14,11 +14,11 @@ const PublicHeader: React.FC = () => {
       {!isAuthPage && (
         <Space>
           {!token ? (
-            <Button type="primary" onClick={() => navigate('/auth')} style={{ borderRadius: 12 }}>
+            <Button type="primary" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
           ) : (
-            <Button onClick={() => navigate('/history')} style={{ borderRadius: 12 }}>
+            <Button onClick={() => navigate('/history')}>
               Dashboard
             </Button>
           )}

@@ -71,7 +71,6 @@ const PasswordField: React.FC<PasswordFieldProps> = ({
       <Input.Password
         prefix={<LockOutlined />}
         placeholder={placeholder || `${label} (${rules.minLength}-${rules.maxLength} characters)`}
-        style={{ borderRadius: 12 }}
         onChange={onChange}
         value={value}
       />

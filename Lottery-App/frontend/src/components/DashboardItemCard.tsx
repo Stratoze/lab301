@@ -30,7 +30,6 @@ const DashboardItemCard: React.FC<DashboardItemCardProps> = ({
     onClick={onClick}
     style={{
       marginBottom: 12,
-      borderRadius: 12,
       border: selected ? '1px solid #1677ff' : '1px solid #f0f0f0',
       background: selected ? '#e6f4ff' : '#ffffff',
       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
@@ -45,7 +44,7 @@ const DashboardItemCard: React.FC<DashboardItemCardProps> = ({
       {tags && (
         <Space size={4} wrap>
           {tags.map((t, i) => (
-            <Tag key={i} color={t.color} style={{ borderRadius: 12 }} icon={t.icon}>{t.label}</Tag>
+            <Tag key={i} color={t.color} icon={t.icon}>{t.label}</Tag>
           ))}
         </Space>
       )}

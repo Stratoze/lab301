@@ -4,15 +4,7 @@ import { createStyles } from 'antd-style';
 
 const { Title } = Typography;
 
-const useStyles = createStyles(({ token, css }) => ({
-  card: css`
-    border-radius: ${token.borderRadiusLG}px;
-  `,
-  cardMobileBody: css`
-    .ant-card-body {
-      padding: ${token.paddingSM}px;
-    }
-  `,
+const useStyles = createStyles(({ css }) => ({
   header: css`
     display: flex;
     justify-content: space-between;
@@ -52,7 +44,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   }, []);
 
   return (
-    <Card className={`${styles.card} ${isMobile ? styles.cardMobileBody : ''}`}>
+    <Card>
       {/* Title Row */}
       <div className={styles.header}>
         <Title level={4} style={{ margin: 0 }}>{title}</Title>

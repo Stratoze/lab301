@@ -94,7 +94,6 @@ const Profile: React.FC = () => {
           <Button
             block
             onClick={() => setIsPassModalOpen(true)}
-            shape="round"
             icon={<LockOutlined />}
           >
             {linkedAccounts.hasPassword ? 'Change my password' : 'Set a password'}
