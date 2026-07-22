@@ -4,9 +4,17 @@ import { GoogleLogin } from '@react-oauth/google';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined, FacebookFilled } from '@ant-design/icons';
 import PasswordField from '../../../components/PasswordField';
 
+interface RegisterValues {
+  fullName: string;
+  email: string;
+  phone?: string;
+  password: string;
+  confirm: string;
+}
+
 interface RegisterFormProps {
   loading: boolean;
-  onRegister: (values: any) => Promise<void>;
+  onRegister: (values: RegisterValues) => Promise<void>;
   onSwitchToLogin: () => void;
   onSocialLogin: (provider: string, token: string) => Promise<void>;
   onFacebookLogin: () => void;
@@ -19,12 +27,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   onSocialLogin,
   onFacebookLogin,
 }) => {
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: RegisterValues) => {
     try {
       await onRegister(values);
       onSwitchToLogin();
-    } catch (err: any) {
-      message.error(err.message || 'Registration failed');
+    } catch (err: unknown) {
+      const error = err as Error;
+      message.error(error.message || 'Registration failed');
     }
   };
 

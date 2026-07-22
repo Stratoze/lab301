@@ -1,4 +1,4 @@
-import { usePasswordRulesContext } from '../providers/PasswordRulesProvider';
+import { usePasswordRulesContext } from '../providers/usePasswordRulesContext';
 
 export interface PasswordStrength {
   percent: number;

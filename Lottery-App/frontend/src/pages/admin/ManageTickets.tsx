@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, Skeleton } from 'antd';
 import { EditOutlined, PlusOutlined, EyeOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
+import dayjs from 'dayjs';
 import AddTicketModal from './components/AddTicketModal';
 import DashboardCard from '../../components/DashboardCard';
 import CardList from '../../components/CardList';
@@ -9,7 +10,7 @@ import TicketCard from '../../components/TicketCard';
 
 const { RangePicker } = DatePicker;
 
-interface TicketData {
+interface TicketRow {
   id: number;
   resultCode: string;
   stationName: string;
@@ -19,44 +20,56 @@ interface TicketData {
 }
 
 const ManageTickets: React.FC = () => {
-  const [data, setData] = useState<TicketData[]>([]);
+  const [data, setData] = useState<TicketRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [stations, setStations] = useState([]);
+  const [stations, setStations] = useState<{ id: number; name: string; stationCode: string }[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTicket, setEditingTicket] = useState<any>(null);
+  const [editingTicket, setEditingTicket] = useState<TicketRow | null>(null);
 
-  const [filters, setFilters] = useState<any>({
+  interface FilterState {
+    stationId: number | null;
+    startDate: dayjs.Dayjs | null;
+    endDate: dayjs.Dayjs | null;
+    keyword: string;
+  }
+
+  const [filters, setFilters] = useState<FilterState>({
     stationId: null,
     startDate: null,
     endDate: null,
     keyword: '',
   });
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  const fetchStations = async () => {
-    try {
-      const res = await apiClient.get('/admin/tickets/stations');
-      setStations(res.data.data);
-    } catch (e) { message.error('Failed to load stations'); }
-  };
+  const triggerRefresh = () => setRefreshTick(t => t + 1);
 
-  const fetchTickets = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: any = {};
+  useEffect(() => {
+    apiClient.get('/admin/tickets/stations')
+      .then(res => setStations(res.data.data))
+      .catch(() => message.error('Failed to load stations'));
+  }, []);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      setLoading(true);
+      const params: Record<string, unknown> = {};
       if (filters.stationId) params.stationId = filters.stationId;
-      if (filters.startDate) params.startDate = filters.startDate.format('YYYY-MM-DD');
-      if (filters.endDate) params.endDate = filters.endDate.format('YYYY-MM-DD');
+      if (filters.startDate) params.startDate = (filters.startDate as dayjs.Dayjs).format('YYYY-MM-DD');
+      if (filters.endDate) params.endDate = (filters.endDate as dayjs.Dayjs).format('YYYY-MM-DD');
       if (filters.keyword) params.keyword = filters.keyword;
 
-      const response = await apiClient.get('/admin/tickets', { params });
-      setData(response.data.data.content);
-    } catch (error) {
-      message.error('Failed to load tickets');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+      try {
+        const response = await apiClient.get('/admin/tickets', { params });
+        setData(response.data.data.content);
+      } catch {
+        message.error('Failed to load tickets');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTickets();
+  }, [filters, refreshTick]);
 
   const sortedData = useMemo(() => {
     if (!sortBy) return data;
@@ -84,10 +97,7 @@ const ManageTickets: React.FC = () => {
     return arr;
   }, [data, sortBy]);
 
-  useEffect(() => { fetchStations(); }, []);
-  useEffect(() => { fetchTickets(); }, [fetchTickets]);
-
-  const handleEdit = (ticket: any) => {
+  const handleEdit = (ticket: TicketRow) => {
     setEditingTicket(ticket);
     setIsModalOpen(true);
   };
@@ -107,9 +117,10 @@ const ManageTickets: React.FC = () => {
         try {
           await apiClient.patch(`/admin/tickets/${id}/status`, { status: newStatus });
           message.success(`Ticket ${action}ed successfully`);
-          fetchTickets();
-        } catch (e: any) {
-          message.error(e.response?.data?.message || 'Failed to update status');
+          triggerRefresh();
+        } catch (e: unknown) {
+          const err = e as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || 'Failed to update status');
         }
       },
     });
@@ -118,11 +129,11 @@ const ManageTickets: React.FC = () => {
   const columns = [
     { title: 'Result Code', dataIndex: 'resultCode', key: 'resultCode' },
     { title: 'Station', dataIndex: 'stationName', key: 'stationName' },
-    { title: 'Date', dataIndex: 'drawDate', key: 'drawDate', sorter: (a: any, b: any) => a.drawDate.localeCompare(b.drawDate) },
+    { title: 'Date', dataIndex: 'drawDate', key: 'drawDate', sorter: (a: TicketRow, b: TicketRow) => a.drawDate.localeCompare(b.drawDate) },
     {
       title: 'Tags',
       key: 'tags',
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: TicketRow) => (
         <Space>
           <Tag
             color={record.status === 'PUBLISH' ? 'green' : 'default'}
@@ -138,7 +149,7 @@ const ManageTickets: React.FC = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: TicketRow) => (
         <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
       ),
     },
@@ -153,7 +164,7 @@ const ManageTickets: React.FC = () => {
         value={filters.stationId}
         onChange={(val) => setFilters({ ...filters, stationId: val || null })}
       >
-        {stations.map((s: any) => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}
+        {stations.map((s: { id: number; name: string }) => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}
       </Select>
       <RangePicker
         style={{ borderRadius: 2 }}
@@ -180,7 +191,7 @@ const ManageTickets: React.FC = () => {
         placeholder="input search text"
         prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
         onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
-        onPressEnter={() => fetchTickets()}
+        onPressEnter={triggerRefresh}
         allowClear
         style={{ borderRadius: 8 }}
       />
@@ -255,9 +266,9 @@ const ManageTickets: React.FC = () => {
       <AddTicketModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        ticket={editingTicket}
+        ticket={editingTicket ?? undefined}
         stations={stations}
-        onSuccess={fetchTickets}
+        onSuccess={triggerRefresh}
       />
 
       <style>{`

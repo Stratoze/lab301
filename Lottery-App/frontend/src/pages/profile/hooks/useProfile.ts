@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { message } from 'antd';
 import apiClient from '../../../api/apiClient';
 
@@ -52,18 +52,22 @@ const useProfile = (): UseProfileReturn => {
     hasPassword: true,
   });
 
-  const fetchLinkedAccounts = useCallback(async () => {
+  const refreshLinkedAccounts = async () => {
     try {
       const res = await apiClient.get('/user/linked-accounts');
       setLinkedAccounts(res.data.data);
     } catch {
       // Silently fail; user can still see profile
     }
-  }, []);
+  };
 
   useEffect(() => {
-    fetchLinkedAccounts();
-  }, [fetchLinkedAccounts]);
+    apiClient.get('/user/linked-accounts')
+      .then(res => setLinkedAccounts(res.data.data))
+      .catch(() => {
+        // Silently fail; user can still see profile
+      });
+  }, []);
 
   const updateName = async (fullName: string) => {
     setLoading(true);
@@ -73,8 +77,9 @@ const useProfile = (): UseProfileReturn => {
       localStorage.setItem('fullName', newName);
       setUser(prev => ({ ...prev, fullName: newName }));
       message.success('Profile updated successfully');
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || 'Update failed');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Update failed', { cause: e });
     } finally {
       setLoading(false);
     }
@@ -88,9 +93,10 @@ const useProfile = (): UseProfileReturn => {
         newPassword,
       });
       message.success('Password changed successfully!');
-      await fetchLinkedAccounts();
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || 'Failed to change password');
+      await refreshLinkedAccounts();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Failed to change password', { cause: e });
     } finally {
       setLoading(false);
     }
@@ -101,9 +107,10 @@ const useProfile = (): UseProfileReturn => {
     try {
       await apiClient.post('/user/link-social', { provider, token });
       message.success(`${provider} account linked!`);
-      await fetchLinkedAccounts();
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || `Failed to link ${provider}`);
+      await refreshLinkedAccounts();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || `Failed to link ${provider}`, { cause: e });
     } finally {
       setLoading(false);
     }
@@ -114,9 +121,10 @@ const useProfile = (): UseProfileReturn => {
     try {
       await apiClient.put('/user/me', { phone });
       message.success('Phone number updated');
-      await fetchLinkedAccounts();
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || 'Failed to update phone');
+      await refreshLinkedAccounts();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Failed to update phone', { cause: e });
     } finally {
       setLoading(false);
     }
@@ -127,9 +135,10 @@ const useProfile = (): UseProfileReturn => {
     try {
       await apiClient.post('/user/unlink-phone');
       message.success('Phone number unlinked');
-      await fetchLinkedAccounts();
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || 'Failed to unlink phone');
+      await refreshLinkedAccounts();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Failed to unlink phone', { cause: e });
     } finally {
       setLoading(false);
     }
@@ -145,7 +154,7 @@ const useProfile = (): UseProfileReturn => {
     setIsPassModalOpen,
     setIsEditNameOpen,
     setIsPhoneModalOpen,
-    fetchLinkedAccounts,
+    fetchLinkedAccounts: refreshLinkedAccounts,
     updateName,
     changePassword,
     linkSocial,

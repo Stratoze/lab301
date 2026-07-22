@@ -15,9 +15,9 @@ const mockUseProfile = vi.mocked(useProfile);
 
 // Mock antd message
 vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
+  const actual = await vi.importActual<typeof import('antd')>('antd');
   return {
-    ...(actual as any),
+    ...actual,
     message: { error: vi.fn(), warning: vi.fn(), success: vi.fn(), info: vi.fn() },
   };
 });
@@ -26,7 +26,7 @@ import { message } from 'antd';
 
 // Mock LinkedAccountsSection to avoid GoogleOAuthProvider requirement
 vi.mock('../components/LinkedAccountsSection', () => ({
-  default: ({ accounts }: any) => (
+  default: ({ accounts }: { accounts: { googleLinked: boolean; facebookLinked: boolean; phone: string | null; hasPassword: boolean; providers?: { provider: string; providerId: string }[] } }) => (
     <div data-testid="linked-accounts">
       <span>Google: {accounts.googleLinked ? 'Linked' : 'Not Linked'}</span>
     </div>
@@ -35,7 +35,7 @@ vi.mock('../components/LinkedAccountsSection', () => ({
 
 // Mock DashboardCard to just render children
 vi.mock('../../../components/DashboardCard', () => ({
-  default: ({ title, children }: any) => <div><h2>{title}</h2>{children}</div>,
+  default: ({ title, children }: { title: string; children: React.ReactNode }) => <div><h2>{title}</h2>{children}</div>,
 }));
 
 const baseMockReturn = {

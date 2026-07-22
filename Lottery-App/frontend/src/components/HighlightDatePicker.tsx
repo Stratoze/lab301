@@ -24,10 +24,7 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
   const [panelMode, setPanelMode] = useState<'year' | 'month' | 'date'>('date');
 
   useEffect(() => {
-    if (!stationId) {
-      setAvailableDates([]);
-      return;
-    }
+    if (!stationId) return;
     apiClient.get('/checker/available-dates', { params: { stationId } })
       .then(res => {
         setAvailableDates(res.data.data || []);
@@ -70,7 +67,7 @@ const HighlightDatePicker: React.FC<HighlightDatePickerProps> = ({
     return !availableDates.includes(current.format('YYYY-MM-DD'));
   };
 
-  const cellRender = (rawCurrent: any, info: { type: string; originNode: React.ReactElement }) => {
+  const cellRender = (rawCurrent: Dayjs | string | number, info: { type: string; originNode: React.ReactElement }) => {
     const current = dayjs(rawCurrent);
     if (!availableDates.length || !current.isValid()) return info.originNode;
 

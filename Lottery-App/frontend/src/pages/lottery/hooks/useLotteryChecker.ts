@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import apiClient from '../../../api/apiClient';
 import dayjs from 'dayjs';
@@ -15,6 +15,12 @@ export interface CheckResult {
   };
 }
 
+interface Station {
+  id: number;
+  stationCode: string;
+  name: string;
+}
+
 interface FormState {
   stationId: number | null;
   date: dayjs.Dayjs;
@@ -23,10 +29,11 @@ interface FormState {
 
 const useLotteryChecker = () => {
   const [loading, setLoading] = useState(false);
-  const [stations, setStations] = useState<any[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   const [results, setResults] = useState<CheckResult | null>(null);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const isGuest = !localStorage.getItem('token');
+  const initializedRef = useRef(false);
 
   const [form, setForm] = useState<FormState>({
     stationId: null,
@@ -36,21 +43,21 @@ const useLotteryChecker = () => {
 
   useEffect(() => {
     apiClient.get('/admin/tickets/stations').then(res => {
-      const list = res.data.data;
+      const list: Station[] = res.data.data;
       setStations(list);
-      const hcm = list.find((s: any) => s.stationCode === 'SOU-HCM') || list[0];
-      if (hcm && !form.stationId) {
-        setForm((prev) => ({ ...prev, stationId: hcm.id }));
+      if (!initializedRef.current) {
+        const hcm = list.find((s) => s.stationCode === 'SOU-HCM') || list[0];
+        if (hcm) {
+          initializedRef.current = true;
+          setForm((prev) => ({ ...prev, stationId: hcm.id }));
+        }
       }
     });
   }, []);
 
   // Fetch available dates when station changes
   useEffect(() => {
-    if (!form.stationId) {
-      setAvailableDates([]);
-      return;
-    }
+    if (!form.stationId) return;
     apiClient.get('/checker/available-dates', { params: { stationId: form.stationId } })
       .then(res => {
         setAvailableDates(res.data.data || []);
@@ -81,8 +88,9 @@ const useLotteryChecker = () => {
         params: { stationId: form.stationId, date: form.date.format('YYYY-MM-DD') }
       });
       setResults(res.data.data);
-    } catch (e: any) {
-      message.error(e.response?.data?.message || 'Check failed');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || 'Check failed');
     } finally {
       setLoading(false);
     }

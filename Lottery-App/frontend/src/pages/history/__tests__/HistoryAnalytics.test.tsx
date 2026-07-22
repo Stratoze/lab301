@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import HistoryAnalytics from '../HistoryAnalytics';
@@ -15,14 +15,14 @@ const mockUseHistory = vi.mocked(useHistoryAnalytics);
 
 // Mock child components to simplify assertions
 vi.mock('../components/AnalyticsChart', () => ({
-  default: ({ data }: any) => <div data-testid="analytics-chart">{data.length} points</div>,
+  default: ({ data }: { data: { name: string; spent: number; won: number }[] }) => <div data-testid="analytics-chart">{data.length} points</div>,
 }));
 
 vi.mock('../components/HistoryTable', () => ({
-  default: ({ data }: any) => (
+  default: ({ data }: { data: { key: number; number: string; station: string }[] }) => (
     <table data-testid="history-table">
       <tbody>
-        {data.map((t: any) => (
+        {data.map((t) => (
           <tr key={t.key}>
             <td>{t.number}</td>
             <td>{t.station}</td>
@@ -35,20 +35,20 @@ vi.mock('../components/HistoryTable', () => ({
 
 // Mock antd CardList and HistoryCard to simplify
 vi.mock('../../../components/CardList', () => ({
-  default: ({ children, sortBy, onSortChange, sortOptions }: any) => (
+  default: ({ children }: { children: React.ReactNode; sortBy?: string; onSortChange?: (val: string) => void; sortOptions?: { value: string; label: string }[] }) => (
     <div data-testid="card-list">{children}</div>
   ),
 }));
 
 vi.mock('../../../components/HistoryCard', () => ({
-  default: ({ ticket }: any) => (
+  default: ({ ticket }: { ticket: { key: number; number: string } }) => (
     <div data-testid={`history-card-${ticket.key}`}>{ticket.number}</div>
   ),
 }));
 
 // Mock DashboardCard to just render children
 vi.mock('../../../components/DashboardCard', () => ({
-  default: ({ title, children }: any) => (
+  default: ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div>
       <h2>{title}</h2>
       <div>{children}</div>
@@ -56,15 +56,7 @@ vi.mock('../../../components/DashboardCard', () => ({
   ),
 }));
 
-// Mock window.innerWidth
-const setMobile = (isMobile: boolean) => {
-  Object.defineProperty(window, 'innerWidth', {
-    writable: true,
-    configurable: true,
-    value: isMobile ? 375 : 1024,
-  });
-  window.dispatchEvent(new Event('resize'));
-};
+
 
 describe('HistoryAnalytics', () => {
   beforeEach(() => {

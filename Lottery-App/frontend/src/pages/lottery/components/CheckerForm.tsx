@@ -10,9 +10,14 @@ interface FormState {
   numbers: string;
 }
 
+interface Station {
+  id: number;
+  name: string;
+}
+
 interface CheckerFormProps {
   form: FormState;
-  stations: any[];
+  stations: Station[];
   isGuest: boolean;
   onChange: (form: FormState) => void;
 }
@@ -26,7 +31,7 @@ const CheckerForm: React.FC<CheckerFormProps> = ({ form, stations, isGuest, onCh
         value={form.stationId}
         onChange={(v) => onChange({ ...form, stationId: v, date: dayjs() })}
       >
-        {stations.map((s: any) => (
+        {stations.map((s) => (
           <Select.Option key={s.id} value={s.id}>
             {s.name}
           </Select.Option>

@@ -17,8 +17,9 @@ const ResetModal: React.FC<ResetModalProps> = ({ open, onClose, onReset }) => {
       await onReset(values.email);
       onClose();
       form.resetFields();
-    } catch (err: any) {
-      message.error(err.message || 'Something went wrong.');
+    } catch (err: unknown) {
+      const error = err as Error;
+      message.error(error.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }

@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/password/forgot", "/api/v1/password/reset").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/tickets/stations").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/checker/available-dates").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/checker/check").permitAll()
                 // Admin endpoints
                 .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")

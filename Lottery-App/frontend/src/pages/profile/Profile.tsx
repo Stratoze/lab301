@@ -36,8 +36,9 @@ const Profile: React.FC = () => {
     try {
       await updateName(values.fullName);
       setIsEditNameOpen(false);
-    } catch (e: any) {
-      message.error(e.message || 'Update failed');
+    } catch (e: unknown) {
+      const err = e as Error;
+      message.error(err.message || 'Update failed');
     }
   };
 
@@ -53,8 +54,9 @@ const Profile: React.FC = () => {
     try {
       await changePassword(values.oldPassword, values.newPassword);
       setIsPassModalOpen(false);
-    } catch (e: any) {
-      message.error(e.message || 'Failed to change password');
+    } catch (e: unknown) {
+      const err = e as Error;
+      message.error(err.message || 'Failed to change password');
     }
   };
 
@@ -62,8 +64,9 @@ const Profile: React.FC = () => {
     try {
       await updatePhone(values.phone);
       setIsPhoneModalOpen(false);
-    } catch (e: any) {
-      message.error(e.message || 'Failed to update phone');
+    } catch (e: unknown) {
+      const err = e as Error;
+      message.error(err.message || 'Failed to update phone');
     }
   };
 

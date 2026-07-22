@@ -1,7 +1,6 @@
-import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import dayjs from 'dayjs';
 import LotteryCheck from '../LotteryCheck';
 
 // Mock the hook completely
@@ -15,9 +14,9 @@ const mockUseLotteryChecker = vi.mocked(useLotteryChecker);
 
 // Mock antd message
 vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
+  const actual = await vi.importActual<typeof import('antd')>('antd');
   return {
-    ...(actual as any),
+    ...actual,
     message: { error: vi.fn(), warning: vi.fn(), success: vi.fn() },
   };
 });
@@ -29,7 +28,7 @@ describe('LotteryCheck', () => {
       stations: [],
       results: null,
       isGuest: true,
-      form: { stationId: null, date: null as any, numbers: '' },
+      form: { stationId: null as number | null, date: dayjs(), numbers: '' },
       setForm: vi.fn(),
       handleCheck: vi.fn(),
       setResults: vi.fn(),

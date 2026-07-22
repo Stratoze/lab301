@@ -12,7 +12,7 @@ interface PasswordFieldProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   showStrength?: boolean;
-  extraRules?: any[];
+  extraRules?: Record<string, unknown>[];
   dependencies?: string[];
 }
 
@@ -36,7 +36,7 @@ const PasswordField: React.FC<PasswordFieldProps> = ({
     { min: rules.minLength, message: `Password must be at least ${rules.minLength} characters` },
     { max: rules.maxLength, message: `Password must be no more than ${rules.maxLength} characters` },
     {
-      validator: (_: any, val: string) => {
+      validator: (_: unknown, val: string) => {
         if (val && rules.blocklist.has(val.toLowerCase())) {
           return Promise.reject(new Error('This password is too common. Please choose a stronger one.'));
         }

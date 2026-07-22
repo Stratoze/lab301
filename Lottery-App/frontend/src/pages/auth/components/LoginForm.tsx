@@ -18,11 +18,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onFacebookLogin,
   onForgotPassword,
 }) => {
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: { email: string; password: string }) => {
     try {
       await onLogin(values.email, values.password);
-    } catch (err: any) {
-      message.error(err.message || 'Login failed');
+    } catch (err: unknown) {
+      const error = err as Error;
+      message.error(error.message || 'Login failed');
     }
   };
 

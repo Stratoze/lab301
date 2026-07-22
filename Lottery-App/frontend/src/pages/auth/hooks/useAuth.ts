@@ -4,10 +4,25 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../api/apiClient';
 import { loginWithFacebookPopup } from '../../../utils/facebookOAuth';
 
+interface AuthData {
+  token: string;
+  role: string;
+  userCode: string;
+  email?: string;
+  fullName: string;
+}
+
+interface RegisterValues {
+  fullName: string;
+  email: string;
+  phone?: string;
+  password: string;
+}
+
 interface UseAuthReturn {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (values: any) => Promise<void>;
+  register: (values: RegisterValues) => Promise<void>;
   socialLogin: (provider: string, token: string) => Promise<void>;
   facebookLogin: () => void;
   forgotPassword: (email: string) => Promise<void>;
@@ -24,7 +39,7 @@ const useAuth = (): UseAuthReturn => {
     }
   }, [navigate]);
 
-  const saveAuth = (data: any) => {
+  const saveAuth = (data: AuthData) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('role', data.role);
     localStorage.setItem('userCode', data.userCode);
@@ -40,20 +55,22 @@ const useAuth = (): UseAuthReturn => {
       saveAuth({ ...data, email });
       message.success('Login successful!');
       navigate('/lottery', { replace: true });
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Login failed. Please try again.');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Login failed. Please try again.', { cause: error });
     } finally {
       setLoading(false);
     }
   };
 
-  const register = async (values: any) => {
+  const register = async (values: RegisterValues) => {
     setLoading(true);
     try {
       await apiClient.post('/auth/register', values);
       message.success('Registration successful! Please login.');
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Registration failed.');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Registration failed.', { cause: error });
     } finally {
       setLoading(false);
     }
@@ -66,8 +83,9 @@ const useAuth = (): UseAuthReturn => {
       saveAuth(response.data.data);
       message.success('Login successful!');
       navigate('/lottery', { replace: true });
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Social login failed');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Social login failed', { cause: error });
     } finally {
       setLoading(false);
     }
@@ -76,7 +94,7 @@ const useAuth = (): UseAuthReturn => {
   const facebookLogin = () => {
     loginWithFacebookPopup()
       .then((token: string) => socialLogin('FACEBOOK', token))
-      .catch((err: any) => {
+      .catch((err: Error) => {
         if (err.message !== 'Facebook login was cancelled') {
           message.error(err.message || 'Facebook login failed');
         }

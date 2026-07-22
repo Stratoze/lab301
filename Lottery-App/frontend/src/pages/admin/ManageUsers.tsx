@@ -8,13 +8,23 @@ import UserCard from '../../components/UserCard';
 
 const { Text } = Typography;
 
+interface UserData {
+  id: number;
+  userCode: string;
+  fullName: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  lastLogin?: string;
+}
+
 const ManageUsers: React.FC = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [form] = Form.useForm();
   const [emailForm] = Form.useForm();
   const [addUserForm] = Form.useForm();
@@ -25,39 +35,43 @@ const ManageUsers: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const [loginFilter, setLoginFilter] = useState<string | undefined>(undefined);
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  const fetchUsers = async (keyword = '') => {
-    setLoading(true);
-    try {
-      const params: any = {};
-      if (keyword) params.keyword = keyword;
-      if (loginFilter) params.loginFilter = loginFilter;
-      const response = await apiClient.get('/admin/users', { params });
-      setData(response.data.data.content);
-    } catch (error) {
-      message.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const triggerRefresh = () => setRefreshTick(t => t + 1);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    const loadUsers = async (keyword = '') => {
+      setLoading(true);
+      try {
+        const params: Record<string, unknown> = {};
+        if (keyword) params.keyword = keyword;
+        if (loginFilter) params.loginFilter = loginFilter;
+        const response = await apiClient.get('/admin/users', { params });
+        setData(response.data.data.content);
+      } catch {
+        message.error('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUsers();
+  }, [loginFilter, refreshTick]);
 
   const sortedUsers = useMemo(() => {
     if (!sortBy) return data;
     const arr = [...data];
     switch (sortBy) {
       case 'name_asc':
-        arr.sort((a: any, b: any) => (a.fullName || '').localeCompare(b.fullName || ''));
+        arr.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
         break;
       case 'name_desc':
-        arr.sort((a: any, b: any) => (b.fullName || '').localeCompare(a.fullName || ''));
+        arr.sort((a, b) => (b.fullName || '').localeCompare(a.fullName || ''));
         break;
       case 'role':
-        arr.sort((a: any, b: any) => (a.role || '').localeCompare(b.role || ''));
+        arr.sort((a, b) => (a.role || '').localeCompare(b.role || ''));
         break;
       case 'last_login':
-        arr.sort((a: any, b: any) => {
+        arr.sort((a, b) => {
           const aTime = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
           const bTime = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
           return bTime - aTime;
@@ -85,15 +99,16 @@ const ManageUsers: React.FC = () => {
           message.success(`Users ${isActive ? 'unlocked' : 'locked'} successfully`);
           setSelectedRowKeys([]);
           setMobileSelectedIds([]);
-          fetchUsers();
-        } catch (error: any) {
-          message.error(error.response?.data?.message || 'Action failed');
+          triggerRefresh();
+        } catch (e: unknown) {
+          const err = e as { response?: { data?: { message?: string } } };
+          message.error(err.response?.data?.message || 'Action failed');
         }
       }
     });
   };
 
-  const handleEdit = (user: any) => {
+  const handleEdit = (user: UserData) => {
     setEditingUser(user);
     form.setFieldsValue({
       fullName: user.fullName,
@@ -103,7 +118,8 @@ const ManageUsers: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const onUpdateUser = async (values: any) => {
+  const onUpdateUser = async (values: { fullName: string; phone: string; role: string; isActive: boolean }) => {
+    if (!editingUser) return;
     try {
       const payload = {
         fullName: values.fullName,
@@ -114,20 +130,21 @@ const ManageUsers: React.FC = () => {
       await apiClient.put(`/admin/users/${editingUser.id}`, payload);
       message.success('User updated successfully. Note: role changes require re-login to take effect.');
       setIsModalOpen(false);
-      fetchUsers();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Update failed');
+      triggerRefresh();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || 'Update failed');
     }
   };
 
   const columns = [
-    { title: 'User Code', dataIndex: 'userCode', key: 'userCode', sorter: (a: any, b: any) => a.userCode.localeCompare(b.userCode) },
-    { title: 'Full Name', dataIndex: 'fullName', key: 'fullName', sorter: (a: any, b: any) => a.fullName.localeCompare(b.fullName) },
-    { title: 'Email', dataIndex: 'email', key: 'email', sorter: (a: any, b: any) => a.email.localeCompare(b.email) },
+    { title: 'User Code', dataIndex: 'userCode', key: 'userCode', sorter: (a: UserData, b: UserData) => a.userCode.localeCompare(b.userCode) },
+    { title: 'Full Name', dataIndex: 'fullName', key: 'fullName', sorter: (a: UserData, b: UserData) => a.fullName.localeCompare(b.fullName) },
+    { title: 'Email', dataIndex: 'email', key: 'email', sorter: (a: UserData, b: UserData) => a.email.localeCompare(b.email) },
     {
       title: 'Tags',
       key: 'tags',
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: UserData) => (
         <Space wrap size={[4, 4]}>
           <Tag icon={<UserOutlined />} color="blue">{record.role === 'ROLE_ADMIN' ? 'Admin' : 'User'}</Tag>
           <Tag icon={<ClockCircleOutlined />} color="default">
@@ -144,7 +161,7 @@ const ManageUsers: React.FC = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: UserData) => (
         <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>edit</Button>
       ),
     },
@@ -155,7 +172,7 @@ const ManageUsers: React.FC = () => {
       const idsToExport = isBulkMode && mobileSelectedIds.length > 0 
         ? mobileSelectedIds 
         : selectedRowKeys.map(Number);
-      const params: any = { format };
+      const params: Record<string, unknown> = { format };
       if (idsToExport.length > 0) params.ids = idsToExport;
       const responseType = format === 'json' ? 'json' : 'blob';
       const response = await apiClient.get('/admin/users/export', { params, responseType });
@@ -185,12 +202,27 @@ const ManageUsers: React.FC = () => {
         window.URL.revokeObjectURL(url);
       }
       message.success(`${format.toUpperCase()} export completed`);
-    } catch (error) {
+    } catch {
       message.error('Export failed');
     }
   };
 
-  const handleSendEmail = async (values: any) => {
+  const selectedEmails = useMemo(() => {
+    const ids = mobileSelectedIds.length > 0 ? mobileSelectedIds : selectedRowKeys.map(Number);
+    return data.filter(u => ids.includes(u.id)).map(u => u.email);
+  }, [data, mobileSelectedIds, selectedRowKeys]);
+
+  const removeEmail = (email: string) => {
+    if (mobileSelectedIds.length > 0) {
+      const user = data.find(u => u.email === email);
+      if (user) setMobileSelectedIds(prev => prev.filter(id => id !== user.id));
+    } else {
+      const user = data.find(u => u.email === email);
+      if (user) setSelectedRowKeys(prev => prev.filter(id => id !== user.id));
+    }
+  };
+
+  const handleSendEmail = async (values: { subject: string; content: string }) => {
     const ids = (mobileSelectedIds.length > 0 ? mobileSelectedIds : selectedRowKeys).map(Number);
     try {
       await apiClient.post('/admin/users/send-email', { ids, subject: values.subject, content: values.content });
@@ -199,12 +231,13 @@ const ManageUsers: React.FC = () => {
       emailForm.resetFields();
       setSelectedRowKeys([]);
       setMobileSelectedIds([]);
-    } catch (e: any) {
-      message.error(e.response?.data?.message || 'Failed to send emails');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || 'Failed to send emails');
     }
   };
 
-  const handleAddUser = async (values: any) => {
+  const handleAddUser = async (values: { email: string; password: string; fullName: string; phone: string }) => {
     try {
       await apiClient.post('/auth/register', {
         email: values.email,
@@ -215,9 +248,10 @@ const ManageUsers: React.FC = () => {
       message.success('User created successfully');
       setIsAddModalOpen(false);
       addUserForm.resetFields();
-      fetchUsers();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Failed to create user');
+      triggerRefresh();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || 'Failed to create user');
     }
   };
 
@@ -241,7 +275,7 @@ const ManageUsers: React.FC = () => {
         value={loginFilter}
         onChange={(value) => {
           setLoginFilter(value);
-          fetchUsers();
+          triggerRefresh();
         }}
         allowClear
         style={{ width: 160 }}
@@ -255,7 +289,7 @@ const ManageUsers: React.FC = () => {
       />
       <Input.Search 
         placeholder="email/phone/usercode" 
-        onSearch={fetchUsers} 
+        onSearch={() => triggerRefresh()}
         style={{ width: 250, borderRadius: 2 }} 
       />
       <Dropdown menu={bulkMenu} disabled={selectedRowKeys.length === 0}>
@@ -271,7 +305,7 @@ const ManageUsers: React.FC = () => {
       <Input
         placeholder="input search text"
         prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-        onChange={(e) => fetchUsers(e.target.value)}
+        onChange={() => triggerRefresh()}
         allowClear
         style={{ borderRadius: 8 }}
       />
@@ -341,7 +375,7 @@ const ManageUsers: React.FC = () => {
         {/* Mobile Cards */}
         <div className="mobile-view">
           <CardList loading={loading}>
-            {sortedUsers.map((user: any) => {
+            {sortedUsers.map((user: UserData) => {
               const isSelected = mobileSelectedIds.includes(user.id);
               return (
                 <UserCard
@@ -360,8 +394,8 @@ const ManageUsers: React.FC = () => {
                     isBulkMode
                       ? undefined
                       : [
-                          <SendOutlined key="send" onClick={(e: any) => { e.stopPropagation(); message.info('Email feature coming soon'); }} />,
-                          <EditOutlined key="edit" onClick={(e: any) => { e.stopPropagation(); handleEdit(user); }} />,
+                          <SendOutlined key="send" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setMobileSelectedIds([user.id]); setIsEmailModalOpen(true); }} />,
+                          <EditOutlined key="edit" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleEdit(user); }} />,
                         ]
                   }
                 />
@@ -432,7 +466,12 @@ const ManageUsers: React.FC = () => {
 
       <Modal title="Send Email" open={isEmailModalOpen} onCancel={() => setIsEmailModalOpen(false)} onOk={() => emailForm.submit()} destroyOnHidden zIndex={1100}>
         <Form form={emailForm} layout="vertical" onFinish={handleSendEmail}>
-          <Text type="secondary">To: {mobileSelectedIds.length > 0 ? mobileSelectedIds.length : selectedRowKeys.length} selected users</Text>
+          <Text type="secondary">To:</Text>
+          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {selectedEmails.map(email => (
+              <Tag key={email} closable onClose={() => removeEmail(email)} color="blue">{email}</Tag>
+            ))}
+          </div>
           <Form.Item name="subject" label="Subject" rules={[{ required: true }]} style={{ marginTop: 16 }}>
             <Input placeholder="input subject here" style={{ borderRadius: 2 }} />
           </Form.Item>

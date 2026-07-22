@@ -5,11 +5,24 @@ import LotteryNumberInput from '../../../components/LotteryNumberInput';
 import HighlightDatePicker from '../../../components/HighlightDatePicker';
 import dayjs from 'dayjs';
 
+interface Station {
+  id: number;
+  name: string;
+  stationCode: string;
+}
+
+interface TicketData {
+  stationName: string;
+  drawDate: string;
+  status: string;
+  prizes: Array<{ type: string; winningNumber: string }>;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
-  ticket?: any;
-  stations: any[];
+  ticket?: TicketData;
+  stations: Station[];
   onSuccess: () => void;
 }
 
@@ -28,9 +41,17 @@ const prizeConfig: Record<string, { label: string; chunkSize: number; maxChunks:
 const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSuccess }) => {
   const [form] = Form.useForm();
 
+  const getNumbers = (prizes: Array<{ type: string; winningNumber: string }> | undefined, type: string) => {
+    if (!prizes) return '';
+    return prizes
+      .filter((p) => p.type === type)
+      .map((p) => p.winningNumber)
+      .join(',');
+  };
+
   useEffect(() => {
     if (open && ticket) {
-      const station = stations.find((s: any) => s.name === ticket.stationName);
+      const station = stations.find((s: { id: number; name: string; stationCode: string }) => s.name === ticket.stationName);
       form.setFieldsValue({
         stationId: station?.id || null,
         drawDate: ticket.drawDate ? dayjs(ticket.drawDate) : null,
@@ -47,7 +68,7 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
       });
     } else if (open && !ticket) {
       form.resetFields();
-      const hcmStation = stations.find((s: any) => s.stationCode === 'SOU-HCM') || stations[0];
+      const hcmStation = stations.find((s: { stationCode: string; id: number }) => s.stationCode === 'SOU-HCM') || stations[0];
       form.setFieldsValue({
         status: 'UNPUBLISH',
         stationId: hcmStation?.id || null,
@@ -56,18 +77,12 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
     }
   }, [ticket, open, stations, form]);
 
-  const getNumbers = (prizes: any[], type: string) => {
-    if (!prizes) return '';
-    return prizes
-      .filter((p: any) => p.type === type)
-      .map((p: any) => p.winningNumber)
-      .join(',');
-  };
-
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: Record<string, string | number | null>) => {
+    const stringValue = (val: string | number | null | undefined): string =>
+      (val === null || val === undefined) ? '' : String(val);
     const prizes = Object.entries(prizeConfig).map(([field, config]) => ({
       type: field.toUpperCase(),
-      winningNumbers: values[field] || '',
+      winningNumbers: stringValue(values[field]),
       rewardAmount: config.rewardAmount,
     })).filter(p => p.winningNumbers.trim() !== '');
 
@@ -119,15 +134,16 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
     try {
       await apiClient.post('/admin/tickets', {
         stationId: values.stationId,
-        drawDate: values.drawDate.format('YYYY-MM-DD'),
+        drawDate: (values.drawDate as unknown as dayjs.Dayjs).format('YYYY-MM-DD'),
         status: values.status,
         prizes,
       });
       message.success('Ticket saved successfully');
       onSuccess();
       onClose();
-    } catch (e: any) {
-      const errorMsg = e.response?.data?.message || 'Failed to save ticket (Potential duplicate date/station)';
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      const errorMsg = err.response?.data?.message || 'Failed to save ticket (Potential duplicate date/station)';
       message.error(errorMsg);
     }
   };
@@ -149,7 +165,7 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <Form.Item name="stationId" label="Station" style={{ flex: 1, minWidth: 200 }} rules={[{ required: true, message: 'Please select a station' }]}>
             <Select placeholder="Select Station">
-              {stations.map((s: any) => (
+              {stations.map((s) => (
                 <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
               ))}
             </Select>

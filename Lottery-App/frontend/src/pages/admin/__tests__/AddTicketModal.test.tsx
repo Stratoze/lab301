@@ -1,5 +1,4 @@
-import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AddTicketModal from '../components/AddTicketModal';
@@ -14,16 +13,16 @@ vi.mock('../../../api/apiClient', () => ({
 
 // Mock antd message
 vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
+  const actual = await vi.importActual<typeof import('antd')>('antd');
   return {
-    ...(actual as any),
+    ...actual,
     message: { error: vi.fn(), warning: vi.fn(), success: vi.fn(), info: vi.fn() },
   };
 });
 
 // Mock LotteryNumberInput
 vi.mock('../../../components/LotteryNumberInput', () => ({
-  default: ({ placeholder, value, onChange }: any) => (
+  default: ({ placeholder, value, onChange }: { placeholder?: string; value?: string; onChange: (val: string) => void }) => (
     <input
       data-testid="number-input"
       placeholder={placeholder}
@@ -35,7 +34,7 @@ vi.mock('../../../components/LotteryNumberInput', () => ({
 
 // Mock HighlightDatePicker
 vi.mock('../../../components/HighlightDatePicker', () => ({
-  default: ({ value, onChange }: any) => (
+  default: ({ value, onChange }: { value?: { format: (fmt: string) => string }; onChange: (val: { format: () => string }) => void }) => (
     <input
       data-testid="date-picker"
       value={value?.format?.('YYYY-MM-DD') || ''}
