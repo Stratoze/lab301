@@ -53,9 +53,12 @@ class TicketServiceImplTest {
 
     private LotteryStation stationHCM;
     private LotteryResult savedResult;
+    private LocalDate drawDate;
 
     @BeforeEach
     void setUp() {
+        drawDate = LocalDate.of(2023, 10, 23);
+
         stationHCM = LotteryStation.builder()
                 .id(1)
                 .stationCode("SOU-HCM")
@@ -67,7 +70,7 @@ class TicketServiceImplTest {
                 .id(1L)
                 .resultCode("RES-HCM-23102023")
                 .station(stationHCM)
-                .drawDate(LocalDate.of(2023, 10, 23))
+                .drawDate(drawDate)
                 .status("UNPUBLISH")
                 .totalQueries(0L)
                 .prizeDetails(new ArrayList<>())
@@ -75,9 +78,7 @@ class TicketServiceImplTest {
     }
 
     @Test
-    void addTicket_ValidInput_ReturnsSavedWithUnpublish() {
-        LocalDate drawDate = LocalDate.of(2023, 10, 23);
-
+    void createTicket_ValidInput_ReturnsSavedWithUnpublish() {
         when(stationRepository.findById(1)).thenReturn(Optional.of(stationHCM));
         when(resultRepository.findByStationIdAndDrawDate(1, drawDate))
                 .thenReturn(Optional.empty());
@@ -97,7 +98,7 @@ class TicketServiceImplTest {
                 null
         );
 
-        TicketResponse response = ticketService.createOrUpdateTicket(request);
+        TicketResponse response = ticketService.createTicket(request, null);
 
         assertThat(response.status()).isEqualTo("UNPUBLISH");
         assertThat(response.resultCode()).isEqualTo("RES-HCM-23102023");
@@ -106,9 +107,7 @@ class TicketServiceImplTest {
     }
 
     @Test
-    void addTicket_DuplicateStationAndDate_ThrowsConflict() {
-        LocalDate drawDate = LocalDate.of(2023, 10, 23);
-
+    void createTicket_DuplicateStationAndDate_ThrowsConflict() {
         when(stationRepository.findById(1)).thenReturn(Optional.of(stationHCM));
         when(resultRepository.findByStationIdAndDrawDate(1, drawDate))
                 .thenReturn(Optional.of(savedResult));
@@ -123,7 +122,7 @@ class TicketServiceImplTest {
                 null
         );
 
-        assertThatThrownBy(() -> ticketService.createOrUpdateTicket(request))
+        assertThatThrownBy(() -> ticketService.createTicket(request, null))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("already exists");
 
@@ -131,9 +130,7 @@ class TicketServiceImplTest {
     }
 
     @Test
-    void addTicket_InvalidPrizeLength_ThrowsError() {
-        LocalDate drawDate = LocalDate.of(2023, 10, 23);
-
+    void createTicket_InvalidPrizeLength_ThrowsError() {
         when(stationRepository.findById(1)).thenReturn(Optional.of(stationHCM));
 
         CreateTicketRequest request = new CreateTicketRequest(
@@ -145,7 +142,7 @@ class TicketServiceImplTest {
                 null
         );
 
-        assertThatThrownBy(() -> ticketService.createOrUpdateTicket(request))
+        assertThatThrownBy(() -> ticketService.createTicket(request, null))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("2-digit numbers");
 
@@ -153,9 +150,7 @@ class TicketServiceImplTest {
     }
 
     @Test
-    void addTicket_NonNumericPrize_ThrowsError() {
-        LocalDate drawDate = LocalDate.of(2023, 10, 23);
-
+    void createTicket_NonNumericPrize_ThrowsError() {
         when(stationRepository.findById(1)).thenReturn(Optional.of(stationHCM));
 
         CreateTicketRequest request = new CreateTicketRequest(
@@ -167,9 +162,70 @@ class TicketServiceImplTest {
                 null
         );
 
-        assertThatThrownBy(() -> ticketService.createOrUpdateTicket(request))
+        assertThatThrownBy(() -> ticketService.createTicket(request, null))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("digits only");
+
+        verify(resultRepository, never()).save(any());
+    }
+
+    @Test
+    void updateTicket_ValidInput_UpdatesExisting() {
+        when(resultRepository.findById(1L)).thenReturn(Optional.of(savedResult));
+        when(stationRepository.findById(1)).thenReturn(Optional.of(stationHCM));
+        when(resultRepository.findByStationIdAndDrawDate(1, drawDate))
+                .thenReturn(Optional.of(savedResult));
+        when(resultRepository.save(any(LotteryResult.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateTicketRequest request = new CreateTicketRequest(
+                1,
+                drawDate,
+                List.of(
+                        new PrizeRequest("G8", "85", 100000L),
+                        new PrizeRequest("G_DB", "999999", 2000000000L)
+                ),
+                null
+        );
+
+        TicketResponse response = ticketService.updateTicket(1L, request, null);
+
+        assertThat(response.id()).isEqualTo(1L);
+        assertThat(response.resultCode()).isEqualTo("RES-HCM-23102023");
+        assertThat(response.prizes()).hasSize(2);
+
+        verify(resultRepository).save(savedResult);
+    }
+
+    @Test
+    void updateTicket_DuplicateDifferentResult_ThrowsConflict() {
+        LotteryResult otherResult = LotteryResult.builder()
+                .id(2L)
+                .resultCode("RES-HCM-23102023")
+                .station(stationHCM)
+                .drawDate(drawDate)
+                .status("UNPUBLISH")
+                .totalQueries(0L)
+                .prizeDetails(new ArrayList<>())
+                .build();
+
+        when(resultRepository.findById(1L)).thenReturn(Optional.of(savedResult));
+        when(stationRepository.findById(1)).thenReturn(Optional.of(stationHCM));
+        when(resultRepository.findByStationIdAndDrawDate(1, drawDate))
+                .thenReturn(Optional.of(otherResult));
+
+        CreateTicketRequest request = new CreateTicketRequest(
+                1,
+                drawDate,
+                List.of(
+                        new PrizeRequest("G8", "85", 100000L),
+                        new PrizeRequest("G_DB", "999999", 2000000000L)
+                ),
+                null
+        );
+
+        assertThatThrownBy(() -> ticketService.updateTicket(1L, request, null))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("already exists");
 
         verify(resultRepository, never()).save(any());
     }
