@@ -1,0 +1,79 @@
+name: lottery-app
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: lottery-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    # No ports exposed to host in production
+    volumes:
+      - lottery_db_prod:/var/lib/mysql
+      - ./mysql/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # No seed data in production
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - lottery-internal
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  backend:
+    build:
+      context: ../backend/checker
+      dockerfile: Dockerfile
+    container_name: lottery-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      JPA_DDL_AUTO: validate
+      JPA_SHOW_SQL: "false"
+    # No ports exposed to host; only accessible via frontend nginx proxy
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lottery-internal
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        VITE_FACEBOOK_APP_ID: ${VITE_FACEBOOK_APP_ID}
+    container_name: lottery-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - lottery-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+networks:
+  lottery-internal:
+    driver: bridge
+
+volumes:
+  lottery_db_prod:

@@ -1,0 +1,15 @@
+# Prevent local dev secrets from being packaged into the image
+src/main/resources/env.properties
+
+# Build artifacts (we build inside Docker)
+target/
+
+# IDE / OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Git
+.git/
+.gitignore

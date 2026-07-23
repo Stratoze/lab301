@@ -1,0 +1,61 @@
+name: lottery-app-dev
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: lottery-db-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - lottery_db_dev:/var/lib/mysql
+      # Schema + seed run automatically on FIRST boot only
+      - ./mysql/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./mysql/02-seed-dev.sql:/docker-entrypoint-initdb.d/02-seed-dev.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ../backend/checker
+      dockerfile: Dockerfile
+    container_name: lottery-backend-dev
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # Override for dev: use update instead of validate
+      JPA_DDL_AUTO: update
+      JPA_SHOW_SQL: "true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        VITE_FACEBOOK_APP_ID: ${VITE_FACEBOOK_APP_ID}
+    container_name: lottery-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  lottery_db_dev:
