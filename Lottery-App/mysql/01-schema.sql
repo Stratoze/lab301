@@ -1,7 +1,8 @@
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- =================================================================================
 -- LOTTERY CHECKER - SCHEMA ONLY
--- Run automatically by MySQL Docker on first boot
--- Database 'lottery_db' and user 'lottery' are already created by the container
 -- =================================================================================
 
 USE lottery_db;
