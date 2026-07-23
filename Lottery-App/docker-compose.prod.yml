@@ -5,6 +5,8 @@ services:
     image: mysql:8.0
     container_name: lottery-db
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -30,12 +32,12 @@ services:
 
   backend:
     build:
-      context: ../backend/checker
+      context: backend/checker
       dockerfile: Dockerfile
     container_name: lottery-backend
     restart: unless-stopped
     env_file:
-      - ../.env
+      - .env
     environment:
       JPA_DDL_AUTO: validate
       JPA_SHOW_SQL: "false"
@@ -52,7 +54,7 @@ services:
 
   frontend:
     build:
-      context: ../frontend
+      context: frontend
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api/v1
@@ -60,6 +62,8 @@ services:
         VITE_FACEBOOK_APP_ID: ${VITE_FACEBOOK_APP_ID}
     container_name: lottery-frontend
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "80:80"
     depends_on:

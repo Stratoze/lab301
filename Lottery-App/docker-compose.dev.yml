@@ -5,6 +5,8 @@ services:
     image: mysql:8.0
     container_name: lottery-db-dev
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -14,7 +16,6 @@ services:
       - "3306:3306"
     volumes:
       - lottery_db_dev:/var/lib/mysql
-      # Schema + seed run automatically on FIRST boot only
       - ./mysql/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./mysql/02-seed-dev.sql:/docker-entrypoint-initdb.d/02-seed-dev.sql:ro
     healthcheck:
@@ -26,14 +27,13 @@ services:
 
   backend:
     build:
-      context: ../backend/checker
+      context: backend/checker
       dockerfile: Dockerfile
     container_name: lottery-backend-dev
     restart: unless-stopped
     env_file:
-      - ../.env
+      - .env
     environment:
-      # Override for dev: use update instead of validate
       JPA_DDL_AUTO: update
       JPA_SHOW_SQL: "true"
     ports:
@@ -44,7 +44,7 @@ services:
 
   frontend:
     build:
-      context: ../frontend
+      context: frontend
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api/v1
@@ -52,6 +52,8 @@ services:
         VITE_FACEBOOK_APP_ID: ${VITE_FACEBOOK_APP_ID}
     container_name: lottery-frontend-dev
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "5173:80"
     depends_on:
