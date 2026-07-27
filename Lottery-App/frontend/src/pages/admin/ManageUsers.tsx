@@ -28,12 +28,10 @@ const ManageUsers: React.FC = () => {
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [form] = Form.useForm();
   const [emailForm] = Form.useForm();
-  const [addUserForm] = Form.useForm();
 
   // Mobile bulk mode state
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [mobileSelectedIds, setMobileSelectedIds] = useState<number[]>([]);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const [loginFilter, setLoginFilter] = useState<string | undefined>(undefined);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -256,23 +254,6 @@ const ManageUsers: React.FC = () => {
     }
   };
 
-  const handleAddUser = async (values: { email: string; password: string; fullName: string; phone: string }) => {
-    try {
-      await apiClient.post('/auth/register', {
-        email: values.email,
-        password: values.password,
-        fullName: values.fullName,
-        phone: values.phone || '',
-      });
-      message.success('User created successfully');
-      setIsAddModalOpen(false);
-      addUserForm.resetFields();
-      triggerRefresh();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      message.error(err.response?.data?.message || 'Failed to create user');
-    }
-  };
 
   const bulkMenu = {
     items: [
@@ -360,16 +341,6 @@ const ManageUsers: React.FC = () => {
           style={{ flex: 1 }}
         >
           Bulk Action
-        </Button>
-        <Button
-          type="default"
-          onClick={() => {
-            addUserForm.resetFields();
-            setIsAddModalOpen(true);
-          }}
-          style={{ flex: 1 }}
-        >
-          Add New
         </Button>
       </div>
       <Select
@@ -526,27 +497,6 @@ const ManageUsers: React.FC = () => {
           <Form.Item name="content" label="Content" rules={[{ required: true }]}>
             <Input.TextArea placeholder="input content here" rows={4}maxLength={500} showCount />
           </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal title="Add New User" open={isAddModalOpen} onCancel={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }} footer={null} destroyOnHidden zIndex={1100}>
-        <Form form={addUserForm} layout="vertical" onFinish={handleAddUser}>
-          <Form.Item name="fullName" label="Full Name" rules={[{ required: true, message: 'Please enter full name' }]}>
-            <Input placeholder="Nguyen Van A" />
-          </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Invalid email format' }]}>
-            <Input placeholder="example@gmail.com"/>
-          </Form.Item>
-          <Form.Item name="phone" label="Phone">
-            <Input placeholder="0123456789"/>
-          </Form.Item>
-          <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please enter password' }, { min: 10, message: 'Password must be at least 10 characters' }]}>
-            <Input.Password placeholder="At least 10 characters"/>
-          </Form.Item>
-          <div style={{ textAlign: 'right', gap: 8, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => { setIsAddModalOpen(false); addUserForm.resetFields(); }}>Cancel</Button>
-            <Button type="primary" htmlType="submit">Create</Button>
-          </div>
         </Form>
       </Modal>
 
