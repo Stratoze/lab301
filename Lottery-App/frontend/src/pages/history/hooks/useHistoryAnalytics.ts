@@ -14,6 +14,7 @@ interface Ticket {
   number: string;
   station: string;
   isWon: boolean;
+  prize: string;
   amount: number;
 }
 
@@ -48,6 +49,7 @@ const useHistoryAnalytics = () => {
               station: t.station,
               number: (t as { number?: string }).number || '',
               isWon: (t as { isWon?: boolean }).isWon || false,
+              prize: (t as { prize?: string }).prize || 'No Prize',
               amount: (t as { amount?: number }).amount || 0,
             });
           });

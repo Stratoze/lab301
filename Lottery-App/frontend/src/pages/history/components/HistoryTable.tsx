@@ -7,6 +7,7 @@ interface Ticket {
   number: string;
   station: string;
   isWon: boolean;
+  prize: string;
   amount: number;
 }
 
@@ -26,8 +27,8 @@ const HistoryTable: React.FC<HistoryTableProps> = ({ data }) => {
         {
           title: 'Result',
           dataIndex: 'isWon',
-          render: (w: boolean) => (
-            <Tag color={!w ? 'red' : 'green'}>{w ? 'Winner' : 'No Prize'}</Tag>
+          render: (w: boolean, record: Ticket) => (
+            <Tag color={!w ? 'red' : 'green'}>{w ? `Won: ${record.prize}` : 'No Prize'}</Tag>
           ),
         },
         {

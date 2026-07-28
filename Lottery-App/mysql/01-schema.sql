@@ -44,7 +44,9 @@ CREATE TABLE user_auth_providers (
     provider VARCHAR(20) NOT NULL,
     provider_id VARCHAR(255) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, 
+    UNIQUE KEY uq_provider_account (provider, provider_id), 
+    UNIQUE KEY uq_user_provider (user_id, provider)
 );
 
 CREATE TABLE password_reset_tokens (

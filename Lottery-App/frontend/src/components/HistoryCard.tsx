@@ -7,6 +7,7 @@ interface HistoryTicket {
   number: string;
   station: string;
   isWon: boolean;
+  prize: string;
   amount: number;
   checkTime: string;
 }
@@ -20,7 +21,7 @@ const HistoryCard: React.FC<HistoryCardProps> = ({ ticket, formatCheckTime }) =>
   <DashboardItemCard
     title={ticket.number}
     tags={[
-      { label: ticket.isWon ? 'Winner' : 'No Prize', color: ticket.isWon ? 'green' : 'red' },
+      { label: ticket.isWon ? `Won: ${ticket.prize}` : 'No Prize', color: ticket.isWon ? 'green' : 'red' },
       { label: `${ticket.amount?.toLocaleString()} VND`, color: ticket.amount === 0 ? 'default' : 'purple' },
     ]}
     details={[

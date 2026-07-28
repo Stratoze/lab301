@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Layout, Button, Drawer } from 'antd';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuthContext } from '../../contexts/useAuthContext';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
@@ -15,10 +16,11 @@ const DashboardLayout: React.FC<Props> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const role = localStorage.getItem('role');
+  const { user, logout } = useAuthContext();
+  const role = user?.role ?? null;
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate('/auth');
   };
 

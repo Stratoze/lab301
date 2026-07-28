@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuthContext } from '../contexts/useAuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -7,12 +8,10 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const { isAuthenticated, isAdmin } = useAuthContext();
 
-  if (!token) return <Navigate to="/auth" replace />;
-  if (adminOnly && role !== 'ROLE_ADMIN') return <Navigate to="/lottery" replace />;
-
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (adminOnly && !isAdmin) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 };
 

@@ -45,6 +45,8 @@ const ManageTickets: React.FC = () => {
     keyword: '',
   });
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortField, setSortField] = useState<string>('drawDate');
+  const [sortDir, setSortDir] = useState<string>('desc');
   const [refreshTick, setRefreshTick] = useState(0);
   const triggerRefresh = () => setRefreshTick(t => t + 1);
 
@@ -65,6 +67,7 @@ const ManageTickets: React.FC = () => {
       const params: Record<string, unknown> = {
         page,
         size: pageSize,
+        sort: `${sortField},${sortDir}`,
       };
 
       if (filters.stationId) params.stationId = filters.stationId;
@@ -85,30 +88,19 @@ const ManageTickets: React.FC = () => {
     };
 
     fetchTickets();
-  }, [filters, page, refreshTick]);
+  }, [filters, page, refreshTick, sortField, sortDir]);
 
+  // Server-side sorting is now handled via sort param; local sort kept only for mobile card view
   const sortedData = useMemo(() => {
     if (!sortBy) return data;
     const arr = [...data];
     switch (sortBy) {
-      case 'resultCode_asc':
-        arr.sort((a, b) => (a.resultCode || '').localeCompare(b.resultCode || ''));
-        break;
-      case 'resultCode_desc':
-        arr.sort((a, b) => (b.resultCode || '').localeCompare(a.resultCode || ''));
-        break;
-      case 'station_asc':
-        arr.sort((a, b) => (a.stationName || '').localeCompare(b.stationName || ''));
-        break;
-      case 'station_desc':
-        arr.sort((a, b) => (b.stationName || '').localeCompare(a.stationName || ''));
-        break;
-      case 'date_asc':
-        arr.sort((a, b) => (a.drawDate || '').localeCompare(b.drawDate || ''));
-        break;
-      case 'date_desc':
-        arr.sort((a, b) => (b.drawDate || '').localeCompare(a.drawDate || ''));
-        break;
+      case 'resultCode_asc': arr.sort((a, b) => (a.resultCode || '').localeCompare(b.resultCode || '')); break;
+      case 'resultCode_desc': arr.sort((a, b) => (b.resultCode || '').localeCompare(a.resultCode || '')); break;
+      case 'station_asc': arr.sort((a, b) => (a.stationName || '').localeCompare(b.stationName || '')); break;
+      case 'station_desc': arr.sort((a, b) => (b.stationName || '').localeCompare(a.stationName || '')); break;
+      case 'date_asc': arr.sort((a, b) => (a.drawDate || '').localeCompare(b.drawDate || '')); break;
+      case 'date_desc': arr.sort((a, b) => (b.drawDate || '').localeCompare(a.drawDate || '')); break;
     }
     return arr;
   }, [data, sortBy]);
@@ -274,7 +266,7 @@ const ManageTickets: React.FC = () => {
             <Card>
               <Table
                 columns={columns}
-                dataSource={sortedData}
+                dataSource={data}
                 rowKey="id"
                 loading={loading}
                 pagination={{
@@ -282,6 +274,13 @@ const ManageTickets: React.FC = () => {
                   pageSize,
                   total,
                   onChange: (p) => setPage(p - 1),
+                }}
+                onChange={(_pagination, _filters, sorter) => {
+                  if (!Array.isArray(sorter) && sorter.field) {
+                    setSortField(sorter.field as string);
+                    setSortDir(sorter.order === 'ascend' ? 'asc' : 'desc');
+                    setPage(0);
+                  }
                 }}
                 locale={{ emptyText: 'No tickets found' }}
               />

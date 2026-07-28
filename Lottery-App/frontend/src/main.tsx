@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ConfigProvider } from 'antd'
 import { PasswordRulesProvider } from './providers/PasswordRulesProvider'
+import { AuthProvider } from './contexts/AuthProvider'
 import './index.css'
 import App from './App.tsx'
 
@@ -34,7 +35,9 @@ createRoot(document.getElementById('root')!).render(
             }}
           >
         <PasswordRulesProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </PasswordRulesProvider>
       </ConfigProvider>
     </GoogleOAuthProvider>

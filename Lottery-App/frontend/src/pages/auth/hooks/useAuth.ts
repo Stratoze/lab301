@@ -3,14 +3,7 @@ import { message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../api/apiClient';
 import { loginWithFacebookPopup } from '../../../utils/facebookOAuth';
-
-interface AuthData {
-  token: string;
-  role: string;
-  userCode: string;
-  email?: string;
-  fullName: string;
-}
+import { useAuthContext } from '../../../contexts/useAuthContext';
 
 interface RegisterValues {
   fullName: string;
@@ -31,28 +24,20 @@ interface UseAuthReturn {
 const useAuth = (): UseAuthReturn => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated, login: contextLogin } = useAuthContext();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
+    if (isAuthenticated) {
       navigate('/lottery', { replace: true });
     }
-  }, [navigate]);
-
-  const saveAuth = (data: AuthData) => {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('role', data.role);
-    localStorage.setItem('userCode', data.userCode);
-    localStorage.setItem('email', data.email || '');
-    localStorage.setItem('fullName', data.fullName);
-  };
+  }, [navigate, isAuthenticated]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { email, password });
       const data = response.data.data;
-      saveAuth({ ...data, email });
+      contextLogin(data, email);
       message.success('Login successful!');
       navigate('/lottery', { replace: true });
     } catch (error: unknown) {
@@ -80,7 +65,7 @@ const useAuth = (): UseAuthReturn => {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/social', { provider, token });
-      saveAuth(response.data.data);
+      contextLogin(response.data.data);
       message.success('Login successful!');
       navigate('/lottery', { replace: true });
     } catch (error: unknown) {

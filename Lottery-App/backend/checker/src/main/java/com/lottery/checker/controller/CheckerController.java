@@ -64,6 +64,18 @@ public class CheckerController {
             throw new RuntimeException("Guests can only check one ticket at a time. Please login to check multiple tickets.");
         }
 
+        if (numbers.size() > 50) {
+            throw new RuntimeException("Maximum 50 tickets per check. You submitted " + numbers.size() + ".");
+        }
+
+        // Reject duplicate numbers within the same request
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (String num : numbers) {
+            if (!seen.add(num.trim())) {
+                throw new RuntimeException("Duplicate ticket number in request: \"" + num.trim() + "\". Each ticket can only appear once.");
+            }
+        }
+
         return ResponseEntity.ok(
                 ApiResponse.success(
                         checkerService.checkTickets(stationId, date, numbers, resolvedEmail)

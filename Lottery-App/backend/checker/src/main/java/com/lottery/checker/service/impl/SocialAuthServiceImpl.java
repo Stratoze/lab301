@@ -11,7 +11,6 @@ import com.lottery.checker.security.JwtService;
 import com.lottery.checker.service.SocialAuthService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +28,30 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-@RequiredArgsConstructor
 public class SocialAuthServiceImpl implements SocialAuthService {
+
+    public SocialAuthServiceImpl(UserRepository userRepository,
+                                  UserAuthProviderRepository authProviderRepository,
+                                  JwtService jwtService) {
+        this.userRepository = userRepository;
+        this.authProviderRepository = authProviderRepository;
+        this.jwtService = jwtService;
+
+        // RestTemplate with connect/read timeouts to prevent thread blocking
+        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(java.time.Duration.ofSeconds(5));
+        factory.setReadTimeout(java.time.Duration.ofSeconds(10));
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     private final UserRepository userRepository;
     private final UserAuthProviderRepository authProviderRepository;
     private final JwtService jwtService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    /** JWKS cache with TTL (refresh every 6 hours) */
+    private static final long JWKS_TTL_MS = 6 * 60 * 60 * 1000L;
+    private volatile long jwksCacheTimestamp = 0;
 
     @Value("${google.client-id:}")
     private String googleClientId;
@@ -62,6 +78,11 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .findByProviderAndProviderId(request.provider().toUpperCase(), info.providerId())
                 .map(UserAuthProvider::getUser)
                 .orElse(null);
+
+        // Block inactive users from social login
+        if (user != null && !user.getIsActive()) {
+            throw new SecurityException("Your account is blocked. Please contact support.");
+        }
 
         if (user == null && info.email() != null) {
             user = userRepository.findByEmail(info.email()).orElse(null);
@@ -153,8 +174,10 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
     @SuppressWarnings("unchecked")
     private PublicKey getGooglePublicKey(String kid) {
-        // Use cache if available
-        if (cachedGoogleKeys != null && cachedGoogleKeys.containsKey(kid)) {
+        // Use cache if available and not expired (TTL = 6 hours)
+        if (cachedGoogleKeys != null
+                && cachedGoogleKeys.containsKey(kid)
+                && (System.currentTimeMillis() - jwksCacheTimestamp) < JWKS_TTL_MS) {
             return cachedGoogleKeys.get(kid);
         }
 
@@ -170,6 +193,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
         }
 
         cachedGoogleKeys = new ConcurrentHashMap<>();
+        jwksCacheTimestamp = System.currentTimeMillis();
         List<Map<String, Object>> keys = (List<Map<String, Object>>) jwks.get("keys");
         for (Map<String, Object> key : keys) {
             String k = (String) key.get("kid");

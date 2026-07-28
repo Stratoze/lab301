@@ -81,8 +81,8 @@ describe('HistoryAnalytics', () => {
     mockUseHistory.mockReturnValue({
       loading: false,
       history: [
-        { key: 0, date: '10/23/2023', checkTime: '2023-10-23T16:30:00Z', number: '123485', station: 'TP. H? Chi Minh', isWon: true, amount: 100000 },
-        { key: 1, date: '10/23/2023', checkTime: '2023-10-23T16:30:01Z', number: '000000', station: 'TP. H? Chi Minh', isWon: false, amount: 0 },
+        { key: 0, date: '10/23/2023', checkTime: '2023-10-23T16:30:00Z', number: '123485', station: 'TP. H? Chi Minh', isWon: true, prize: 'G8', amount: 100000 },
+        { key: 1, date: '10/23/2023', checkTime: '2023-10-23T16:30:01Z', number: '000000', station: 'TP. H? Chi Minh', isWon: false, prize: 'No Prize', amount: 0 },
       ],
       chartData: [{ name: '10/23/2023', spent: 30000, won: 100000 }],
       hasHistory: true,

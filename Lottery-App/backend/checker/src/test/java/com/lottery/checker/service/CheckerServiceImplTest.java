@@ -27,8 +27,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -183,11 +183,11 @@ class CheckerServiceImplTest {
         when(userRepository.findByEmail("khach1@gmail.com"))
                 .thenReturn(Optional.of(testUser));
 
-        when(checkHistoryRepository.existsByUserAndResultAndTicket(
+        when(checkHistoryRepository.findExistingTickets(
                 anyLong(),
                 anyLong(),
-                anyString()
-        )).thenReturn(false);
+                anyList()
+        )).thenReturn(List.of());
 
         Map<String, Object> response = checkerService.checkTickets(
                 1,
@@ -254,12 +254,7 @@ class CheckerServiceImplTest {
                 null
         );
 
-        ArgumentCaptor<LotteryResult> resultCaptor =
-                ArgumentCaptor.forClass(LotteryResult.class);
-
-        verify(resultRepository).save(resultCaptor.capture());
-
-        assertThat(resultCaptor.getValue().getTotalQueries()).isEqualTo(1L);
+        verify(resultRepository).incrementTotalQueries(1L);
     }
 
     @Test

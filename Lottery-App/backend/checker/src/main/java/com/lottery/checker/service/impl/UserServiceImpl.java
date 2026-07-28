@@ -15,6 +15,7 @@ import com.lottery.checker.service.SocialAuthService;
 import com.lottery.checker.service.UserService;
 import com.lottery.checker.validation.PasswordValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mail.SimpleMailMessage;
@@ -35,6 +36,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;

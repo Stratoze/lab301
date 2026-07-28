@@ -5,6 +5,7 @@ import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
@@ -49,12 +50,9 @@ public class AdminUserController {
     }
 
     @PatchMapping("/status")
-    public ResponseEntity<ApiResponse<String>> updateStatus(@RequestBody Map<String, Object> payload) {
-        List<Long> ids = extractIds(payload.get("ids"));
-        boolean isActive = Boolean.TRUE.equals(payload.get("isActive"));
-
-        userService.updateStatus(ids, isActive);
-
+    public ResponseEntity<ApiResponse<String>> updateStatus(
+            @Valid @RequestBody com.lottery.checker.dto.request.UpdateStatusRequest request) {
+        userService.updateStatus(request.ids(), request.isActive());
         return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
     }
 
@@ -73,14 +71,9 @@ public class AdminUserController {
     }
 
     @PostMapping("/send-email")
-    public ResponseEntity<ApiResponse<String>> sendEmail(@RequestBody Map<String, Object> payload) {
-        List<Long> ids = extractIds(payload.get("ids"));
-
-        String subject = (String) payload.get("subject");
-        String content = (String) payload.get("content");
-
-        userService.sendBulkEmail(ids, subject, content);
-
+    public ResponseEntity<ApiResponse<String>> sendEmail(
+            @Valid @RequestBody com.lottery.checker.dto.request.SendEmailRequest request) {
+        userService.sendBulkEmail(request.ids(), request.subject(), request.content());
         return ResponseEntity.ok(ApiResponse.success("Emails sent successfully"));
     }
 
@@ -141,7 +134,8 @@ public class AdminUserController {
     }
 
     private byte[] generateExcel(List<UserResponse> users) {
-        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+        // SXSSF streams rows to disk to avoid OOM on large exports (keeps 100 rows in memory)
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Users");
             Row headerRow = sheet.createRow(0);
             String[] columns = {"User Code", "Full Name", "Email", "Phone", "Role", "Status", "Last Login", "Created At"};

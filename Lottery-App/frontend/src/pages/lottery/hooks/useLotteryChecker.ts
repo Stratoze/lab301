@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import apiClient from '../../../api/apiClient';
+import { useAuthContext } from '../../../contexts/useAuthContext';
 import dayjs from 'dayjs';
 
 export interface CheckResult {
@@ -32,7 +33,8 @@ const useLotteryChecker = () => {
   const [stations, setStations] = useState<Station[]>([]);
   const [results, setResults] = useState<CheckResult | null>(null);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const isGuest = !localStorage.getItem('token');
+  const { isAuthenticated } = useAuthContext();
+  const isGuest = !isAuthenticated;
   const initializedRef = useRef(false);
 
   const [form, setForm] = useState<FormState>({

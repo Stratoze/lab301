@@ -4,6 +4,7 @@ import com.lottery.checker.entity.LotteryResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -34,4 +35,8 @@ public interface LotteryResultRepository extends JpaRepository<LotteryResult, Lo
 
     @Query("SELECT DISTINCT r.drawDate FROM LotteryResult r WHERE r.station.id = :stationId AND r.status = 'PUBLISH' ORDER BY r.drawDate")
     List<LocalDate> findDrawDatesByStation(@Param("stationId") Integer stationId);
+
+    @Modifying
+    @Query("UPDATE LotteryResult r SET r.totalQueries = r.totalQueries + 1 WHERE r.id = :id")
+    void incrementTotalQueries(@Param("id") Long id);
 }

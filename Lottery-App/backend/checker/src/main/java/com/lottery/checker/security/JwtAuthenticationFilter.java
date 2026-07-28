@@ -33,22 +33,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtService.validateToken(token)) {
             String email = jwtService.getEmailFromToken(token);
-            String role = jwtService.getRoleFromToken(token);
 
-            // Check if user is active (blocked users are denied access immediately)
+            // Read both active status AND role from DB to prevent stale JWT claims
             Optional<User> userOpt = userRepository.findByEmail(email);
             if (userOpt.isEmpty() || !userOpt.get().getIsActive()) {
-                // User not found or blocked ? do not set authentication
-                // This causes a 401/403, frontend will clear token and redirect to /auth
+                // User not found or blocked → do not set authentication
                 filterChain.doFilter(request, response);
                 return;
             }
+
+            // Use DB role instead of JWT role to enforce role changes immediately
+            String currentRole = userOpt.get().getRole().name();
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             email,
                             null,
-                            List.of(new SimpleGrantedAuthority(role))
+                            List.of(new SimpleGrantedAuthority(currentRole))
                     );
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);

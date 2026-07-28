@@ -7,7 +7,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_auth_providers")
+@Table(name = "user_auth_providers", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_provider_account", columnNames = {"provider", "provider_id"}),
+    @UniqueConstraint(name = "uq_user_provider",    columnNames = {"user_id", "provider"})
+})
 @Getter
 @Setter
 @NoArgsConstructor

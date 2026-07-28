@@ -48,19 +48,13 @@ public class CheckerServiceImpl implements CheckerService {
                 : null;
 
         if (user != null) {
-            List<String> duplicates = new ArrayList<>();
-
-            for (String num : numbers) {
-                String clean = num.trim();
-
-                if (checkHistoryRepository.existsByUserAndResultAndTicket(
-                        user.getId(),
-                        result.getId(),
-                        clean
-                )) {
-                    duplicates.add(clean);
-                }
-            }
+            // Batch check for duplicates in a single query (avoids N+1)
+            List<String> cleanNumbers = numbers.stream().map(String::trim).toList();
+            List<String> duplicates = checkHistoryRepository.findExistingTickets(
+                    user.getId(),
+                    result.getId(),
+                    cleanNumbers
+            );
 
             if (!duplicates.isEmpty()) {
                 throw new RuntimeException(
@@ -111,8 +105,8 @@ public class CheckerServiceImpl implements CheckerService {
         session.setTotalWon(totalWon);
         sessionRepository.save(session);
 
-        result.setTotalQueries(result.getTotalQueries() + 1);
-        resultRepository.save(result);
+        // Atomic increment to avoid race condition under concurrent requests
+        resultRepository.incrementTotalQueries(result.getId());
 
         return Map.of(
                 "summary", Map.of(
