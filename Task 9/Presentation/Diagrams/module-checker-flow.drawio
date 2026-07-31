@@ -1,0 +1,72 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="Fdfkj1labFuSlX3aKYmQ">
+    <mxGraphModel dx="992" dy="655" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-1" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-2" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="User&amp;nbsp;" vertex="1">
+          <mxGeometry height="60" width="30" x="20" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-3" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-18">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="284" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="POST /checker/check&lt;div&gt;{stationid, date, number[]}&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="152" x="100" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="200ok&lt;br&gt;{summary, detail[]}" vertex="1">
+          <mxGeometry height="60" width="120" x="116" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-20" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-18" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Validate&lt;br&gt;&lt;div&gt;[6 digits - &amp;lt;= 50 tickets - no duplicates]&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="210" x="300" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-26" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-19" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Find Published Result&lt;br&gt;{station, drawDate}" vertex="1">
+          <mxGeometry height="60" width="180" x="560" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-22" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;dashed=1;dashPattern=8 8;" target="Rp-KsBNWgQrFYwZR8Avm-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="for guest limit = 1 ticket" vertex="1">
+          <mxGeometry height="60" width="120" x="345" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-28" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-25" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Batch check" vertex="1">
+          <mxGeometry height="60" width="180" x="560" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-33" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-30">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-27" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Find best Prize" vertex="1">
+          <mxGeometry height="60" width="180" x="560" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-34" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Rp-KsBNWgQrFYwZR8Avm-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-30" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Save Check session + Check Histories&lt;br&gt;Update total queries + 1 atomically" vertex="1">
+          <mxGeometry height="60" width="210" x="299" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-31" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="for guest user id of session = null" vertex="1">
+          <mxGeometry height="60" width="120" x="344" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="Rp-KsBNWgQrFYwZR8Avm-32" edge="1" parent="1" source="Rp-KsBNWgQrFYwZR8Avm-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;dashed=1;dashPattern=8 8;" target="Rp-KsBNWgQrFYwZR8Avm-30">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="340" as="sourcePoint" />
+            <mxPoint x="240" y="380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

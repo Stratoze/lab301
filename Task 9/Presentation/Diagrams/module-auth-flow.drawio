@@ -1,0 +1,61 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="jLefrU9StAMQFFcilmUW">
+    <mxGraphModel dx="992" dy="655" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-10" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="User&amp;nbsp;" vertex="1">
+          <mxGeometry height="60" width="30" x="50" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-11" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="POST /auth/login&lt;div&gt;{email, password}&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="120" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-12" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-4" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-17" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-7" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-3" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="user exist?" vertex="1">
+          <mxGeometry height="80" width="80" x="272" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-13" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-5" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-16" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-8" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-4" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="user&lt;br&gt;isActive?" vertex="1">
+          <mxGeometry height="80" width="80" x="400" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-14" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-6" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-15" edge="1" parent="1" source="OJYp9OAZSJQmwXJlU3ng-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="OJYp9OAZSJQmwXJlU3ng-9" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-5" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="Bcrypt Matches ?" vertex="1">
+          <mxGeometry height="80" width="80" x="528" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="authResponse&lt;br&gt;{token, email,role....}" vertex="1">
+          <mxGeometry height="60" width="120" x="656" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="401 user doesn&#39;t exist" vertex="1">
+          <mxGeometry height="60" width="120" x="252" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="403 forbidden&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="380" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="OJYp9OAZSJQmwXJlU3ng-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="401 wrong password" vertex="1">
+          <mxGeometry height="60" width="120" x="508" y="270" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

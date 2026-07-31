@@ -1,0 +1,76 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="59tPt7XqS95pSGg-bzot">
+    <mxGraphModel dx="992" dy="655" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-1" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-2" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Admin" vertex="1">
+          <mxGeometry height="60" width="30" x="10" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-3" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-7">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="274" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="POST /admin/tickets&lt;div&gt;{stationid, date, List&amp;lt;PrizeRequest&amp;gt;}&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="162" x="80" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="200 ok&lt;br&gt;{TicketResponse&amp;gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="320" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-6" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="550" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;Validate&lt;/b&gt;&lt;br&gt;&lt;div&gt;correct number of digit by prize type&lt;/div&gt;&lt;div&gt;numbers only&lt;/div&gt;&lt;div&gt;no duplicates&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="210" x="290" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-8" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-13">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="760" y="320" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-10" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;dashed=1;dashPattern=8 8;" target="tlCZdjYmjTahbgE5Izg0-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="UNIQUE(station_id, draw_date)&lt;br&gt;UNIQUE(result_id,prize_type,winning_number)" vertex="1">
+          <mxGeometry height="60" width="288" x="360" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-12" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-15">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="760" y="430" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-14" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-17">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="670" y="500" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-16" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-5">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="533" y="470" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-22" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-21" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-24" edge="1" parent="1" source="tlCZdjYmjTahbgE5Izg0-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="tlCZdjYmjTahbgE5Izg0-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-20" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Duplicate Drawdate + stationid ?&lt;/span&gt;" vertex="1">
+          <mxGeometry height="100" width="110" x="548" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="400 or 409" vertex="1">
+          <mxGeometry height="60" width="120" x="706" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="tlCZdjYmjTahbgE5Izg0-23" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Save As unpublished" vertex="1">
+          <mxGeometry height="60" width="210" x="498" y="390" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
