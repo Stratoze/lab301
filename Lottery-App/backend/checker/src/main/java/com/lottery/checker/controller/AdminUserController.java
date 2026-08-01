@@ -27,17 +27,6 @@ public class AdminUserController {
 
     private final UserService userService;
 
-    private List<Long> extractIds(Object rawIds) {
-    if (!(rawIds instanceof List<?> list)) {
-        throw new RuntimeException("User ids are required");
-    }
-
-    return list.stream()
-            .filter(java.util.Objects::nonNull)
-            .map(id -> ((Number) id).longValue())
-            .toList();
-    }
-
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getUsers(
             @RequestParam(required = false) String keyword,

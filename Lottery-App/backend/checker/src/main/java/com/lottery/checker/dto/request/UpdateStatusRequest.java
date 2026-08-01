@@ -5,6 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record UpdateStatusRequest(
-        @NotEmpty(message = "User ids are required") List<Long> ids,
-        @NotNull(message = "isActive is required") Boolean isActive
-) {}
+    @NotEmpty(message = "User ids are required") List<Long> ids,
+    @NotNull(message = "isActive is required") Boolean isActive
+) {
+    public UpdateStatusRequest {
+        ids = List.copyOf(ids);
+    }
+}
