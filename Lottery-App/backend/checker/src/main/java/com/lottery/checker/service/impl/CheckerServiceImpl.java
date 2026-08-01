@@ -136,7 +136,7 @@ public class CheckerServiceImpl implements CheckerService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<CheckSession> sessions =
-                sessionRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId());
+                sessionRepository.findAllWithHistoriesByUserId(user.getId());
 
         return sessions.stream()
                 .map(session -> {

@@ -1,6 +1,8 @@
 package com.lottery.checker.repository;
 
 import com.lottery.checker.entity.CheckHistory;
+import com.lottery.checker.entity.CheckSession;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

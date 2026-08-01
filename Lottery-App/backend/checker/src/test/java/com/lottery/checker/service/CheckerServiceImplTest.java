@@ -288,8 +288,8 @@ class CheckerServiceImplTest {
         history1.setSession(session);
         history2.setSession(session);
 
-        when(sessionRepository.findAllByUserIdOrderByCreatedAtDesc(3L))
-                .thenReturn(List.of(session));
+        when(sessionRepository.findAllWithHistoriesByUserId(3L))
+        .thenReturn(List.of(session));
 
         List<Map<String, Object>> history =
                 checkerService.getUserHistory("khach1@gmail.com");
