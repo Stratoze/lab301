@@ -140,12 +140,6 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public void updateStatus(Long id, UpdateTicketStatusRequest request) {
-        updateStatus(id, request, null);
-    }
-
-    @Override
-    @Transactional
     public void updateStatus(Long id, UpdateTicketStatusRequest request, String adminEmail) {
         LotteryResult result = resultRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ticket not found"));

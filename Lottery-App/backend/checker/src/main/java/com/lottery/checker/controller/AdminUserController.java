@@ -1,10 +1,15 @@
 package com.lottery.checker.controller;
 
+import com.lottery.checker.dto.request.SendEmailRequest;
+import com.lottery.checker.dto.request.UpdateStatusRequest;
+import com.lottery.checker.dto.request.UpdateUserRequest;
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
+import com.lottery.checker.service.UserExportService;
 import com.lottery.checker.service.UserService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,17 +18,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 public class AdminUserController {
 
     private final UserService userService;
+    private final UserExportService userExportService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<UserResponse>>> getUsers(
@@ -38,7 +39,7 @@ public class AdminUserController {
 
     @PatchMapping("/status")
     public ResponseEntity<ApiResponse<String>> updateStatus(
-            @Valid @RequestBody com.lottery.checker.dto.request.UpdateStatusRequest request) {
+            @Valid @RequestBody UpdateStatusRequest request) {
         userService.updateStatus(request.ids(), request.isActive());
         return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
     }
@@ -46,13 +47,13 @@ public class AdminUserController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
-            @Valid @RequestBody com.lottery.checker.dto.request.UpdateUserRequest request) {
+            @Valid @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(ApiResponse.success(userService.updateUser(id, request)));
     }
 
     @PostMapping("/send-email")
     public ResponseEntity<ApiResponse<String>> sendEmail(
-            @Valid @RequestBody com.lottery.checker.dto.request.SendEmailRequest request) {
+            @Valid @RequestBody SendEmailRequest request) {
         userService.sendBulkEmail(request.ids(), request.subject(), request.content());
         return ResponseEntity.ok(ApiResponse.success("Emails sent successfully"));
     }
@@ -71,7 +72,7 @@ public class AdminUserController {
 
         return switch (format.toLowerCase()) {
             case "excel", "xlsx" -> {
-                byte[] bytes = generateExcel(users);
+                byte[] bytes = userExportService.generateExcel(users);
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.parseMediaType(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
@@ -83,7 +84,7 @@ public class AdminUserController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(ApiResponse.success(users));
             default -> {
-                byte[] bytes = generateCsv(users);
+                byte[] bytes = userExportService.generateCsv(users);
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.parseMediaType("text/csv"));
                 headers.setContentDispositionFormData("attachment", "users_export.csv");
@@ -92,59 +93,4 @@ public class AdminUserController {
         };
     }
 
-    private byte[] generateCsv(List<UserResponse> users) {
-        StringBuilder csv = new StringBuilder();
-
-        csv.append("User Code,Full Name,Email,Phone,Role,Status,Last Login,Created At\n");
-
-        for (UserResponse u : users) {
-            csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s%n",
-                    escapeCsv(u.userCode()),
-                    escapeCsv(u.fullName()),
-                    escapeCsv(u.email()),
-                    escapeCsv(u.phone() != null ? u.phone() : ""),
-                    u.role().name(),
-                    u.isActive() ? "Active" : "Blocked",
-                    u.lastLogin() != null ? u.lastLogin().toString() : "Never",
-                    u.createdAt() != null ? u.createdAt().toString() : ""
-            ));
-        }
-
-        return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
-    }
-
-    private byte[] generateExcel(List<UserResponse> users) {
-        // SXSSF streams rows to disk to avoid OOM on large exports (keeps 100 rows in memory)
-        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Users");
-            Row headerRow = sheet.createRow(0);
-            String[] columns = {"User Code", "Full Name", "Email", "Phone", "Role", "Status", "Last Login", "Created At"};
-            for (int i = 0; i < columns.length; i++) {
-                headerRow.createCell(i).setCellValue(columns[i]);
-            }
-            int rowIdx = 1;
-            for (UserResponse u : users) {
-                Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(u.userCode());
-                row.createCell(1).setCellValue(u.fullName());
-                row.createCell(2).setCellValue(u.email());
-                row.createCell(3).setCellValue(u.phone() != null ? u.phone() : "");
-                row.createCell(4).setCellValue(u.role().name());
-                row.createCell(5).setCellValue(u.isActive() ? "Active" : "Blocked");
-                row.createCell(6).setCellValue(u.lastLogin() != null ? u.lastLogin().toString() : "Never");
-                row.createCell(7).setCellValue(u.createdAt() != null ? u.createdAt().toString() : "");
-            }
-            workbook.write(bos);
-            return bos.toByteArray();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to generate Excel file", e);
-        }
-    }
-
-    private String escapeCsv(String value) {
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
-    }
 }

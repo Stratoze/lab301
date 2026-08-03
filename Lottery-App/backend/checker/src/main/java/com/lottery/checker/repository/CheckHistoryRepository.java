@@ -10,15 +10,6 @@ import java.util.List;
 
 public interface CheckHistoryRepository extends JpaRepository<CheckHistory, Long> {
 
-    @Query("SELECT COUNT(h) > 0 FROM CheckHistory h " +
-           "JOIN h.session s " +
-           "WHERE s.user.id = :userId " +
-           "AND h.result.id = :resultId " +
-           "AND h.ticketNumber = :ticketNumber")
-    boolean existsByUserAndResultAndTicket(@Param("userId") Long userId,
-                                           @Param("resultId") Long resultId,
-                                           @Param("ticketNumber") String ticketNumber);
-
     @Query("SELECT h.ticketNumber FROM CheckHistory h " +
            "JOIN h.session s " +
            "WHERE s.user.id = :userId " +

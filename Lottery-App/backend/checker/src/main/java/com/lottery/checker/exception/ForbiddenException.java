@@ -1,10 +1,10 @@
 package com.lottery.checker.exception;
 
-public class BadRequestException extends RuntimeException {
+public class ForbiddenException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public BadRequestException(String message) {
+    public ForbiddenException(String message) {
         super(message);
     }
 }

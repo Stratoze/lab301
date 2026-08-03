@@ -33,6 +33,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException e) {
+        log.warn("Unauthorized: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(e.getMessage()));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException e) {
+        log.warn("Forbidden: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+    }
+
+    // SocialAuthServiceImpl still throws java.lang.SecurityException for invalid or
+    // blocked social logins. Keep mapping it to 403 to preserve the existing wire
+    // contract until those errors are remapped to domain exceptions in a future pass.
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<ApiResponse<Void>> handleSecurityException(SecurityException e) {
         log.warn("Security exception: {}", e.getMessage());

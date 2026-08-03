@@ -2,10 +2,12 @@ package com.lottery.checker.controller;
 
 import com.lottery.checker.dto.request.SendEmailRequest;
 import com.lottery.checker.dto.request.UpdateStatusRequest;
+import com.lottery.checker.dto.request.UpdateUserRequest;
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
 import com.lottery.checker.entity.Role;
+import com.lottery.checker.service.UserExportService;
 import com.lottery.checker.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import com.lottery.checker.dto.request.UpdateUserRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -29,6 +30,9 @@ class AdminUserControllerTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private UserExportService userExportService;
 
     @InjectMocks
     private AdminUserController adminUserController;
@@ -203,6 +207,7 @@ class AdminUserControllerTest {
                 .contains("text/csv");
         assertThat(response.getHeaders().getContentDisposition().getFilename())
                 .isEqualTo("users_export.csv");
+        verify(userExportService).generateCsv(List.of(activeUser));
     }
 
     @Test

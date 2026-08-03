@@ -2,10 +2,13 @@ package com.lottery.checker.service;
 
 import com.lottery.checker.dto.request.CreateTicketRequest;
 import com.lottery.checker.dto.request.PrizeRequest;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.TicketResponse;
 import com.lottery.checker.entity.LotteryResult;
 import com.lottery.checker.entity.LotteryStation;
+import com.lottery.checker.entity.Role;
+import com.lottery.checker.entity.User;
 import com.lottery.checker.repository.LotteryResultRepository;
 import com.lottery.checker.repository.LotteryStationRepository;
 import com.lottery.checker.repository.UserRepository;
@@ -26,7 +29,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -259,16 +261,26 @@ class TicketServiceImplTest {
 
     @Test
     void publishTicket_ChangesStatusToPublish() {
+        User admin = User.builder()
+                .id(9L)
+                .email("admin@veso.vn")
+                .fullName("Admin")
+                .role(Role.ROLE_ADMIN)
+                .isActive(true)
+                .build();
+
         when(resultRepository.findById(1L)).thenReturn(Optional.of(savedResult));
+        when(userRepository.findByEmail("admin@veso.vn")).thenReturn(Optional.of(admin));
         when(resultRepository.save(any(LotteryResult.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ticketService.updateStatus(1L, new UpdateTicketStatusRequest("PUBLISH"));
+        ticketService.updateStatus(1L, new UpdateTicketStatusRequest("PUBLISH"), "admin@veso.vn");
 
         ArgumentCaptor<LotteryResult> resultCaptor = ArgumentCaptor.forClass(LotteryResult.class);
         verify(resultRepository).save(resultCaptor.capture());
 
         assertThat(resultCaptor.getValue().getStatus()).isEqualTo("PUBLISH");
         assertThat(resultCaptor.getValue().getPublishedAt()).isNotNull();
+        assertThat(resultCaptor.getValue().getPublishedBy()).isEqualTo(admin);
     }
 
     @Test
@@ -278,7 +290,7 @@ class TicketServiceImplTest {
         when(resultRepository.findById(1L)).thenReturn(Optional.of(savedResult));
         when(resultRepository.save(any(LotteryResult.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ticketService.updateStatus(1L, new UpdateTicketStatusRequest("UNPUBLISH"));
+        ticketService.updateStatus(1L, new UpdateTicketStatusRequest("UNPUBLISH"), "admin@veso.vn");
 
         ArgumentCaptor<LotteryResult> resultCaptor = ArgumentCaptor.forClass(LotteryResult.class);
         verify(resultRepository).save(resultCaptor.capture());

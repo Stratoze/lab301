@@ -52,10 +52,6 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
-    public String getRoleFromToken(String token) {
-        return (String) extractAllClaims(token).get("role");
-    }
-
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -64,7 +60,4 @@ public class JwtService {
                 .getPayload();
     }
 
-    public String extractEmail(String token) {
-        return getEmailFromToken(token);
-    }
 }

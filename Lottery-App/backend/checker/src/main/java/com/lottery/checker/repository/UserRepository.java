@@ -20,8 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Optional<User> findByPhone(String phone);
 
-    boolean existsByPhone(String phone);
-
     @Query("SELECT u FROM User u WHERE " +
             "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

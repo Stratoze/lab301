@@ -9,7 +9,6 @@ import java.util.List;
 
 @Repository
 public interface CheckSessionRepository extends JpaRepository<CheckSession, Long> {
-    List<CheckSession> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 
     @Query("SELECT s FROM CheckSession s " +
        "LEFT JOIN FETCH s.histories h " +

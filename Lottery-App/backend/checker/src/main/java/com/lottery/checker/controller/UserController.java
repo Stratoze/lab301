@@ -1,5 +1,8 @@
 package com.lottery.checker.controller;
 
+import com.lottery.checker.dto.request.ChangePasswordRequest;
+import com.lottery.checker.dto.request.LinkSocialAccountRequest;
+import com.lottery.checker.dto.request.UpdateMeRequest;
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.LinkedAccountsResponse;
 import com.lottery.checker.dto.response.UserResponse;
@@ -24,12 +27,12 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> updateMe(Principal principal, @Valid @RequestBody com.lottery.checker.dto.request.UpdateMeRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateMe(Principal principal, @Valid @RequestBody UpdateMeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(userService.updateMe(principal.getName(), request)));
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<String>> changePassword(Principal principal, @Valid @RequestBody com.lottery.checker.dto.request.ChangePasswordRequest request) {
+    public ResponseEntity<ApiResponse<String>> changePassword(Principal principal, @Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword(principal.getName(), request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
     }
@@ -40,7 +43,7 @@ public class UserController {
     }
 
     @PostMapping("/link-social")
-    public ResponseEntity<ApiResponse<String>> linkSocialAccount(Principal principal, @Valid @RequestBody com.lottery.checker.dto.request.LinkSocialAccountRequest request) {
+    public ResponseEntity<ApiResponse<String>> linkSocialAccount(Principal principal, @Valid @RequestBody LinkSocialAccountRequest request) {
         userService.linkSocialAccount(principal.getName(), request);
         return ResponseEntity.ok(ApiResponse.success("Account linked successfully"));
     }

@@ -10,6 +10,8 @@ import com.lottery.checker.entity.LotteryStation;
 import com.lottery.checker.entity.PrizeDetail;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
 import com.lottery.checker.repository.CheckHistoryRepository;
 import com.lottery.checker.repository.CheckSessionRepository;
 import com.lottery.checker.repository.LotteryResultRepository;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
@@ -263,5 +266,35 @@ class CheckerServiceImplTest {
         assertThat(history.get(0).totalSpent()).isEqualTo(20000L);
         assertThat(history.get(0).totalWon()).isEqualTo(100000L);
         assertThat(history.get(0).tickets()).hasSize(2);
+    }
+
+    @Test
+    void checkTickets_FutureDate_ThrowsBadRequest() {
+        CheckTicketsRequest req = new CheckTicketsRequest(
+                1, LocalDate.now().plusDays(1), List.of("123485"));
+
+        assertThatThrownBy(() -> checkerService.checkTickets(req, null))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("cannot be in the future");
+    }
+
+    @Test
+    void checkTickets_GuestMultipleTickets_ThrowsBadRequest() {
+        CheckTicketsRequest req = new CheckTicketsRequest(
+                1, drawDate, List.of("123485", "000000"));
+
+        assertThatThrownBy(() -> checkerService.checkTickets(req, null))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Guests can only check one ticket");
+    }
+
+    @Test
+    void checkTickets_DuplicateNumbers_ThrowsConflict() {
+        CheckTicketsRequest req = new CheckTicketsRequest(
+                1, drawDate, List.of("123485", " 123485 "));
+
+        assertThatThrownBy(() -> checkerService.checkTickets(req, "khach1@gmail.com"))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Duplicate ticket number");
     }
 }

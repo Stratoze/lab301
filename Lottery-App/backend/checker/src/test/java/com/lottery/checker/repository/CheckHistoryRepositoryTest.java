@@ -13,6 +13,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -92,24 +93,24 @@ class CheckHistoryRepositoryTest {
     }
 
     @Test
-    void existsByUserAndResultAndTicket_ExistingHistory_ReturnsTrue() {
-        boolean exists = checkHistoryRepository.existsByUserAndResultAndTicket(
+    void findExistingTickets_DuplicateExists_ReturnsMatchingNumbers() {
+        List<String> duplicates = checkHistoryRepository.findExistingTickets(
                 user.getId(),
                 result.getId(),
-                "123485"
+                List.of("123485", "999999")
         );
 
-        assertThat(exists).isTrue();
+        assertThat(duplicates).containsExactly("123485");
     }
 
     @Test
-    void existsByUserAndResultAndTicket_UnknownTicket_ReturnsFalse() {
-        boolean exists = checkHistoryRepository.existsByUserAndResultAndTicket(
+    void findExistingTickets_NoDuplicates_ReturnsEmptyList() {
+        List<String> duplicates = checkHistoryRepository.findExistingTickets(
                 user.getId(),
                 result.getId(),
-                "999999"
+                List.of("111111", "999999")
         );
 
-        assertThat(exists).isFalse();
+        assertThat(duplicates).isEmpty();
     }
 }

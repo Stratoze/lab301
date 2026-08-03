@@ -9,9 +9,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Map;
 import com.lottery.checker.dto.request.ForgotPasswordRequest;
 import com.lottery.checker.dto.request.ResetPasswordRequest;
+import com.lottery.checker.dto.response.TokenValidationResponse;
 import com.lottery.checker.exception.BadRequestException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,29 +88,29 @@ class PasswordControllerTest {
     void validateResetToken_ValidToken_ReturnsTrue() {
         when(userService.isResetTokenValid("valid-token")).thenReturn(true);
 
-        ResponseEntity<ApiResponse<Map<String, Boolean>>> response =
+        ResponseEntity<ApiResponse<TokenValidationResponse>> response =
                 passwordController.validateResetToken("valid-token");
 
-        assertThat(response.getBody().getData()).containsEntry("valid", true);
+        assertThat(response.getBody().getData().valid()).isTrue();
     }
 
     @Test
     void validateResetToken_ExpiredToken_ReturnsFalse() {
         when(userService.isResetTokenValid("expired-token")).thenReturn(false);
 
-        ResponseEntity<ApiResponse<Map<String, Boolean>>> response =
+        ResponseEntity<ApiResponse<TokenValidationResponse>> response =
                 passwordController.validateResetToken("expired-token");
 
-        assertThat(response.getBody().getData()).containsEntry("valid", false);
+        assertThat(response.getBody().getData().valid()).isFalse();
     }
 
     @Test
     void validateResetToken_UsedToken_ReturnsFalse() {
         when(userService.isResetTokenValid("used-token")).thenReturn(false);
 
-        ResponseEntity<ApiResponse<Map<String, Boolean>>> response =
+        ResponseEntity<ApiResponse<TokenValidationResponse>> response =
                 passwordController.validateResetToken("used-token");
 
-        assertThat(response.getBody().getData()).containsEntry("valid", false);
+        assertThat(response.getBody().getData().valid()).isFalse();
     }
 }

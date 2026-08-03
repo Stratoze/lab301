@@ -16,8 +16,6 @@ import java.util.Optional;
 @Repository
 public interface LotteryResultRepository extends JpaRepository<LotteryResult, Long> {
 
-    Optional<LotteryResult> findByResultCode(String resultCode);
-
     Optional<LotteryResult> findByStationIdAndDrawDate(Integer stationId, LocalDate drawDate);
 
     @Query("SELECT r FROM LotteryResult r WHERE " +

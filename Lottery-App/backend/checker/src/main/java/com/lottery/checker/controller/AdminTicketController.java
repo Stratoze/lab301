@@ -1,6 +1,7 @@
 package com.lottery.checker.controller;
 
 import com.lottery.checker.dto.request.CreateTicketRequest;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.TicketResponse;
@@ -76,7 +77,7 @@ public class AdminTicketController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<String>> updateStatus(
             @PathVariable Long id,
-            @Valid @RequestBody com.lottery.checker.dto.request.UpdateTicketStatusRequest request,
+            @Valid @RequestBody UpdateTicketStatusRequest request,
             Principal principal
     ) {
         ticketService.updateStatus(id, request, principal.getName());

@@ -6,8 +6,7 @@ import com.lottery.checker.dto.request.SocialLoginRequest;
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.AuthResponse;
 import com.lottery.checker.dto.response.PasswordRulesResponse;
-import com.lottery.checker.entity.User;
-import com.lottery.checker.security.JwtService;
+import com.lottery.checker.service.AuthService;
 import com.lottery.checker.service.SocialAuthService;
 import com.lottery.checker.service.UserService;
 import com.lottery.checker.validation.PasswordRulesHolder;
@@ -15,10 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,8 +23,7 @@ public class AuthController {
 
     private final UserService userService;
     private final SocialAuthService socialAuthService;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final AuthService authService;
     private final PasswordRulesHolder passwordRulesHolder;
 
     @PostMapping("/register")
@@ -58,41 +53,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        User user = userService.findByEmailOptional(request.email()).orElse(null);
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("Invalid email or password."));
-        }
-
-        if (!user.getIsActive()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(ApiResponse.error("Your account is blocked."));
-        }
-
-        if (user.getPassword() == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("Invalid email or password."));
-        }
-
-        userService.updateLastLogin(user.getEmail());
-
-        String token = jwtService.generateToken(
-                user.getEmail(),
-                Map.of(
-                        "role", user.getRole().name(),
-                        "userCode", user.getUserCode(),
-                        "fullName", user.getFullName()
-                )
-        );
-
-        AuthResponse response = new AuthResponse(
-                token,
-                user.getUserCode(),
-                user.getFullName(),
-                user.getRole()
-        );
-
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(authService.login(request)));
     }
 }

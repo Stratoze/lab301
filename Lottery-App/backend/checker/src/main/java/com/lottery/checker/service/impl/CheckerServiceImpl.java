@@ -1,5 +1,6 @@
 package com.lottery.checker.service.impl;
 
+import com.lottery.checker.exception.BadRequestException;
 import com.lottery.checker.exception.ConflictException;
 import com.lottery.checker.exception.NotFoundException;
 
@@ -23,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,8 @@ public class CheckerServiceImpl implements CheckerService {
     @Override
     @Transactional
     public CheckTicketResponse checkTickets(CheckTicketsRequest request, String userEmail) {
+        validateRequest(request, userEmail);
+
         Integer stationId = request.stationId();
         LocalDate date = request.date();
         List<String> numbers = request.numbers();
@@ -78,6 +83,23 @@ public class CheckerServiceImpl implements CheckerService {
                 new CheckTicketResponse.CheckSummary(session.getTotalSpent(), totalWon),
                 detailResults
         );
+    }
+
+    private void validateRequest(CheckTicketsRequest request, String userEmail) {
+        if (request.date() != null && request.date().isAfter(LocalDate.now())) {
+            throw new BadRequestException("Draw date cannot be in the future.");
+        }
+
+        if (userEmail == null && request.numbers().size() > 1) {
+            throw new BadRequestException("Guests can only check one ticket at a time. Please login to check multiple tickets.");
+        }
+
+        Set<String> seen = new HashSet<>();
+        for (String number : request.numbers()) {
+            if (!seen.add(number.trim())) {
+                throw new ConflictException("Duplicate ticket number in request: \"" + number.trim() + "\". Each ticket can only appear once.");
+            }
+        }
     }
 
     private record CheckResult(CheckTicketResponse.CheckDetail detail, long amount) {}

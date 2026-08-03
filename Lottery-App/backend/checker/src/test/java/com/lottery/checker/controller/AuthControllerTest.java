@@ -6,28 +6,23 @@ import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.AuthResponse;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
-import com.lottery.checker.security.JwtService;
+import com.lottery.checker.exception.ForbiddenException;
+import com.lottery.checker.exception.UnauthorizedException;
+import com.lottery.checker.service.AuthService;
 import com.lottery.checker.service.SocialAuthService;
 import com.lottery.checker.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
+import com.lottery.checker.validation.PasswordRulesHolder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,39 +35,13 @@ class AuthControllerTest {
     private SocialAuthService socialAuthService;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private AuthService authService;
 
     @Mock
-    private JwtService jwtService;
+    private PasswordRulesHolder passwordRulesHolder;
 
     @InjectMocks
     private AuthController authController;
-
-    private User activeUser;
-    private User blockedUser;
-
-    @BeforeEach
-    void setUp() {
-        activeUser = User.builder()
-                .id(3L)
-                .userCode("USR-10-2023-00000003")
-                .email("khach1@gmail.com")
-                .password("$2a$12$hashedpassword...")
-                .fullName("Le Van Tam")
-                .role(Role.ROLE_USER)
-                .isActive(true)
-                .build();
-
-        blockedUser = User.builder()
-                .id(9L)
-                .userCode("USR-11-2023-00000001")
-                .email("locked@gmail.com")
-                .password("$2a$12$hashedblocked...")
-                .fullName("Nguoi Bi Khoa")
-                .role(Role.ROLE_USER)
-                .isActive(false)
-                .build();
-    }
 
     @Test
     void register_ValidPayload_Returns201() {
@@ -83,7 +52,8 @@ class AuthControllerTest {
                 "StrongPass1!"
         );
 
-        when(userService.register(any(RegisterRequest.class))).thenReturn(activeUser);
+        when(userService.register(any(RegisterRequest.class)))
+                .thenReturn(User.builder().id(3L).build());
 
         ResponseEntity<ApiResponse<String>> response = authController.register(request);
 
@@ -95,95 +65,41 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_ValidCredentials_Returns200WithJwt() {
+    void login_ValidRequest_DelegatesToAuthService() {
         LoginRequest request = new LoginRequest("khach1@gmail.com", "correctPassword");
+        AuthResponse authResponse = new AuthResponse(
+                "mock.jwt.token", "USR-10-2023-00000003", "Le Van Tam", Role.ROLE_USER);
 
-        when(userService.findByEmailOptional("khach1@gmail.com"))
-                .thenReturn(Optional.of(activeUser));
-        when(passwordEncoder.matches("correctPassword", activeUser.getPassword()))
-                .thenReturn(true);
-        doNothing().when(userService).updateLastLogin("khach1@gmail.com");
-        when(jwtService.generateToken(eq("khach1@gmail.com"), anyMap()))
-                .thenReturn("mock.jwt.token");
+        when(authService.login(request)).thenReturn(authResponse);
 
         ResponseEntity<ApiResponse<AuthResponse>> response = authController.login(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().isSuccess()).isTrue();
-
-        AuthResponse auth = response.getBody().getData();
-        assertThat(auth.token()).isEqualTo("mock.jwt.token");
-        assertThat(auth.fullName()).isEqualTo("Le Van Tam");
-        assertThat(auth.role()).isEqualTo(Role.ROLE_USER);
+        assertThat(response.getBody().getData()).isEqualTo(authResponse);
     }
 
     @Test
-    void login_UnknownEmail_Returns401() {
-        LoginRequest request = new LoginRequest("unknown@gmail.com", "correctPassword");
+    void login_InvalidCredentials_LetsUnauthorizedPropagate() {
+        LoginRequest request = new LoginRequest("unknown@gmail.com", "whatever");
 
-        when(userService.findByEmailOptional("unknown@gmail.com"))
-                .thenReturn(Optional.empty());
+        when(authService.login(request))
+                .thenThrow(new UnauthorizedException("Invalid email or password."));
 
-        ResponseEntity<ApiResponse<AuthResponse>> response = authController.login(request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).isEqualTo("Invalid email or password.");
+        assertThatThrownBy(() -> authController.login(request))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Invalid email or password.");
     }
 
     @Test
-    void login_WrongPassword_Returns401() {
-        LoginRequest request = new LoginRequest("khach1@gmail.com", "wrongPassword");
+    void login_BlockedUser_LetsForbiddenPropagate() {
+        LoginRequest request = new LoginRequest("locked@gmail.com", "whatever");
 
-        when(userService.findByEmailOptional("khach1@gmail.com"))
-                .thenReturn(Optional.of(activeUser));
-        when(passwordEncoder.matches("wrongPassword", activeUser.getPassword()))
-                .thenReturn(false);
+        when(authService.login(request))
+                .thenThrow(new ForbiddenException("Your account is blocked."));
 
-        ResponseEntity<ApiResponse<AuthResponse>> response = authController.login(request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).isEqualTo("Invalid email or password.");
-    }
-
-    @Test
-    void login_BlockedUser_Returns403() {
-        LoginRequest request = new LoginRequest("locked@gmail.com", "correctPassword");
-
-        when(userService.findByEmailOptional("locked@gmail.com"))
-                .thenReturn(Optional.of(blockedUser));
-
-        ResponseEntity<ApiResponse<AuthResponse>> response = authController.login(request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isSuccess()).isFalse();
-        assertThat(response.getBody().getMessage()).contains("blocked");
-    }
-
-    @Test
-    void jwtToken_ContainsCorrectClaimsAndExpiry() {
-        LoginRequest request = new LoginRequest("khach1@gmail.com", "correctPassword");
-
-        when(userService.findByEmailOptional("khach1@gmail.com"))
-                .thenReturn(Optional.of(activeUser));
-        when(passwordEncoder.matches("correctPassword", activeUser.getPassword()))
-                .thenReturn(true);
-        doNothing().when(userService).updateLastLogin("khach1@gmail.com");
-
-        ArgumentCaptor<Map<String, Object>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
-        when(jwtService.generateToken(eq("khach1@gmail.com"), claimsCaptor.capture()))
-                .thenReturn("mock.jwt.token");
-
-        authController.login(request);
-
-        Map<String, Object> claims = claimsCaptor.getValue();
-        assertThat(claims).containsEntry("role", "ROLE_USER");
-        assertThat(claims).containsEntry("userCode", "USR-10-2023-00000003");
-        assertThat(claims).containsEntry("fullName", "Le Van Tam");
+        assertThatThrownBy(() -> authController.login(request))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("Your account is blocked.");
     }
 }

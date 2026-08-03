@@ -1,6 +1,7 @@
 package com.lottery.checker.service;
 
 import com.lottery.checker.dto.request.CreateTicketRequest;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.TicketResponse;
 import com.lottery.checker.entity.LotteryStation;
@@ -25,7 +26,5 @@ public interface TicketService {
             Pageable pageable
     );
 
-    void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request);
-
-    void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request, String adminEmail);
+    void updateStatus(Long id, UpdateTicketStatusRequest request, String adminEmail);
 }

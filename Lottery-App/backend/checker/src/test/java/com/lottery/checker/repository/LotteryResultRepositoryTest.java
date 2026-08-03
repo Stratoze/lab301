@@ -63,14 +63,6 @@ class LotteryResultRepositoryTest {
     }
 
     @Test
-    void findByResultCode_ExistingCode_ReturnsResult() {
-        Optional<LotteryResult> found = lotteryResultRepository.findByResultCode("RES-HCM-22072026");
-
-        assertThat(found).isPresent();
-        assertThat(found.get().getStation().getName()).isEqualTo("TP. Ho Chi Minh");
-    }
-
-    @Test
     void findByStationIdAndDrawDate_ExistingResult_ReturnsResult() {
         Optional<LotteryResult> found =
                 lotteryResultRepository.findByStationIdAndDrawDate(station.getId(), drawDate);
