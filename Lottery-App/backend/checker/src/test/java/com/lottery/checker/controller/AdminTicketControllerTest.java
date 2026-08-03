@@ -20,7 +20,7 @@ import org.springframework.http.ResponseEntity;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -166,11 +166,11 @@ class AdminTicketControllerTest {
         when(principal.getName()).thenReturn("admin@veso.vn");
 
         ResponseEntity<ApiResponse<String>> response =
-                adminTicketController.updateStatus(1L, Map.of("status", "PUBLISH"), principal);
+                adminTicketController.updateStatus(1L, new UpdateTicketStatusRequest("PUBLISH"), principal);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody().getData()).contains("successfully");
-        verify(ticketService).updateStatus(1L, "PUBLISH", "admin@veso.vn");
+        verify(ticketService).updateStatus(eq(1L), eq(new UpdateTicketStatusRequest("PUBLISH")), eq("admin@veso.vn"));
     }
 
     @Test
@@ -178,8 +178,8 @@ class AdminTicketControllerTest {
         when(principal.getName()).thenReturn("admin@veso.vn");
 
         ResponseEntity<ApiResponse<String>> response =
-                adminTicketController.updateStatus(2L, Map.of("status", "UNPUBLISH"), principal);
+                adminTicketController.updateStatus(2L, new UpdateTicketStatusRequest("UNPUBLISH"), principal);
 
-        verify(ticketService).updateStatus(2L, "UNPUBLISH", "admin@veso.vn");
+        verify(ticketService).updateStatus(eq(2L), eq(new UpdateTicketStatusRequest("UNPUBLISH")), eq("admin@veso.vn"));
     }
 }

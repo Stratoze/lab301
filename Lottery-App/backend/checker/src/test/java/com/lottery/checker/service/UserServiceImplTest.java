@@ -25,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.lottery.checker.dto.request.ChangePasswordRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -226,8 +227,7 @@ class UserServiceImplTest {
 
         assertThatCode(() -> userService.changePassword(
                 "khach1@gmail.com",
-                "oldPassword",
-                "NewStrongPass1!"
+                new ChangePasswordRequest("oldPassword", "NewStrongPass1!")
         )).doesNotThrowAnyException();
 
         verify(passwordEncoder).encode("NewStrongPass1!");

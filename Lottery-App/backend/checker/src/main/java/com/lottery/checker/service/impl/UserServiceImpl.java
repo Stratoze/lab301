@@ -1,5 +1,9 @@
 package com.lottery.checker.service.impl;
 
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
+import com.lottery.checker.exception.NotFoundException;
+
 import com.lottery.checker.dto.request.RegisterRequest;
 import com.lottery.checker.dto.response.LinkedAccountsResponse;
 import com.lottery.checker.dto.response.PagedResponse;
@@ -30,7 +34,6 @@ import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,18 +57,18 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User register(RegisterRequest request) {
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         if (request.phone() != null && !request.phone().isBlank()) {
             String phone = request.phone().trim();
 
             if (!phone.matches("^\\d{7,15}$")) {
-                throw new RuntimeException("Invalid phone number format");
+                throw new BadRequestException("Invalid phone number format");
             }
 
             if (userRepository.findByPhone(phone).isPresent()) {
-                throw new RuntimeException("Phone number already exists");
+                throw new ConflictException("Phone number already exists");
             }
         }
 
@@ -86,7 +89,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     @Override
@@ -183,38 +186,42 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateUser(Long id, String fullName, String phone, Role role, Boolean isActive) {
+    public UserResponse updateUser(Long id, com.lottery.checker.dto.request.UpdateUserRequest req) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (fullName != null && !fullName.isBlank()) {
-            user.setFullName(fullName);
+        if (req.fullName() != null && !req.fullName().isBlank()) {
+            user.setFullName(req.fullName());
         }
 
-        if (phone != null) {
-            if (!phone.isBlank()) {
-                if (!phone.matches("^\\d{7,15}$")) {
-                    throw new RuntimeException("Invalid phone number format");
+        if (req.phone() != null) {
+            if (!req.phone().isBlank()) {
+                if (!req.phone().matches("^\\d{7,15}$")) {
+                    throw new BadRequestException("Invalid phone number format");
                 }
 
-                userRepository.findByPhone(phone)
+                userRepository.findByPhone(req.phone())
                         .filter(existing -> !existing.getId().equals(id))
                         .ifPresent(existing -> {
-                            throw new RuntimeException("Phone number already exists");
+                            throw new ConflictException("Phone number already exists");
                         });
 
-                user.setPhone(phone);
+                user.setPhone(req.phone());
             } else {
                 user.setPhone(null);
             }
         }
 
-        if (role != null) {
-            user.setRole(role);
+        if (req.role() != null && !req.role().isBlank()) {
+            try {
+                user.setRole(Role.valueOf(req.role()));
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid role specified");
+            }
         }
 
-        if (isActive != null) {
-            user.setIsActive(isActive);
+        if (req.isActive() != null) {
+            user.setIsActive(req.isActive());
         }
 
         return UserResponse.fromEntity(userRepository.save(user));
@@ -228,29 +235,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateMe(String email, Map<String, String> updates) {
+    public UserResponse updateMe(String email, com.lottery.checker.dto.request.UpdateMeRequest req) {
         User user = findByEmail(email);
 
-        if (updates.containsKey("fullName") && updates.get("fullName") != null) {
-            user.setFullName(updates.get("fullName"));
+        if (req.fullName() != null) {
+            user.setFullName(req.fullName());
         }
 
-        if (updates.containsKey("phone")) {
-            String phone = updates.get("phone");
+        if (req.phone() != null) {
+            String phone = req.phone();
 
-            if (phone != null && !phone.isBlank()) {
+            if (!phone.isBlank()) {
                 if (!phone.matches("^\\d{7,15}$")) {
-                    throw new RuntimeException("Invalid phone number format");
+                    throw new BadRequestException("Invalid phone number format");
                 }
 
                 userRepository.findByPhone(phone)
                         .filter(existing -> !existing.getId().equals(user.getId()))
                         .ifPresent(existing -> {
-                            throw new RuntimeException("Phone number already exists");
+                            throw new ConflictException("Phone number already exists");
                         });
 
                 user.setPhone(phone);
-            } else if (phone != null && phone.isBlank()) {
+            } else {
                 user.setPhone(null);
             }
         }
@@ -260,29 +267,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changePassword(String email, String oldPassword, String newPassword) {
+    public void changePassword(String email, com.lottery.checker.dto.request.ChangePasswordRequest req) {
         User user = findByEmail(email);
 
         boolean isSettingInitialPassword = user.getPassword() == null;
 
         if (isSettingInitialPassword) {
-            if (oldPassword != null && !oldPassword.isBlank()) {
-                throw new RuntimeException("Account has no password set. Leave current password empty to set a new one.");
+            if (req.oldPassword() != null && !req.oldPassword().isBlank()) {
+                throw new BadRequestException("Account has no password set. Leave current password empty to set a new one.");
             }
         } else {
-            if (oldPassword == null || !passwordEncoder.matches(oldPassword, user.getPassword())) {
-                throw new RuntimeException("Current password is incorrect");
+            if (req.oldPassword() == null || !passwordEncoder.matches(req.oldPassword(), user.getPassword())) {
+                throw new BadRequestException("Current password is incorrect");
             }
         }
 
-        if (!passwordValidator.isValid(newPassword, null)) {
-            throw new RuntimeException(
-                    "New password does not meet security requirements. " +
-                    "It must be 10-64 characters and not contain common words or patterns."
-            );
+        if (!passwordValidator.isValid(req.newPassword(), null)) {
+            throw new BadRequestException("New password does not meet security requirements. It must be 10-64 characters and not contain common words or patterns.");
         }
 
-        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPassword(passwordEncoder.encode(req.newPassword()));
         userRepository.save(user);
     }
 
@@ -334,25 +338,22 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void resetPassword(String tokenValue, String newPassword) {
         if (tokenValue == null || tokenValue.isBlank()) {
-            throw new RuntimeException("Invalid or expired reset token");
+            throw new BadRequestException("Invalid or expired reset token");
         }
 
         PasswordResetToken token = passwordResetTokenRepository.findByToken(tokenValue)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired reset token"));
+                .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
 
         if (Boolean.TRUE.equals(token.getIsUsed())) {
-            throw new RuntimeException("This reset link has already been used");
+            throw new ConflictException("This reset link has already been used");
         }
 
         if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Invalid or expired reset token");
+            throw new BadRequestException("Invalid or expired reset token");
         }
 
         if (!passwordValidator.isValid(newPassword, null)) {
-            throw new RuntimeException(
-                    "New password does not meet security requirements. " +
-                    "It must be 10-64 characters and not contain common words or patterns."
-            );
+            throw new BadRequestException("New password does not meet security requirements. It must be 10-64 characters and not contain common words or patterns.");
         }
 
         User user = token.getUser();
@@ -389,16 +390,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void linkSocialAccount(String email, String provider, String token) {
+    public void linkSocialAccount(String email, com.lottery.checker.dto.request.LinkSocialAccountRequest req) {
         User user = findByEmail(email);
 
-        boolean alreadyLinked = userAuthProviderRepository.existsByUserAndProvider(user, provider.toUpperCase());
+        boolean alreadyLinked = userAuthProviderRepository.existsByUserAndProvider(user, req.provider().toUpperCase());
 
         if (alreadyLinked) {
-            throw new RuntimeException("Account already linked to " + provider);
+            throw new ConflictException("Account already linked to " + req.provider());
         }
 
-        socialAuthService.linkProvider(user, provider.toUpperCase(), token);
+        socialAuthService.linkProvider(user, req.provider().toUpperCase(), req.token());
     }
 
     @Override
@@ -413,11 +414,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void sendBulkEmail(List<Long> ids, String subject, String content) {
         if (subject == null || subject.isBlank()) {
-            throw new RuntimeException("Email subject is required");
+            throw new BadRequestException("Email subject is required");
         }
 
         if (content == null || content.isBlank()) {
-            throw new RuntimeException("Email content is required");
+            throw new BadRequestException("Email content is required");
         }
 
         List<User> users = userRepository.findAllById(ids);

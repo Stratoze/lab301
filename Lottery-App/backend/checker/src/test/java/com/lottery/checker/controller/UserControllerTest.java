@@ -17,6 +17,9 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import com.lottery.checker.dto.request.UpdateMeRequest;
+import com.lottery.checker.dto.request.ChangePasswordRequest;
+import com.lottery.checker.dto.request.LinkSocialAccountRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -69,10 +72,10 @@ class UserControllerTest {
                 "0910000001", "New Name", Role.ROLE_USER,
                 true, LocalDateTime.now(), LocalDateTime.now()
         );
-        when(userService.updateMe(eq("khach1@gmail.com"), anyMap())).thenReturn(updated);
+        when(userService.updateMe(eq("khach1@gmail.com"), any(UpdateMeRequest.class))).thenReturn(updated);
 
         ResponseEntity<ApiResponse<UserResponse>> response =
-                userController.updateMe(principal, Map.of("fullName", "New Name"));
+                userController.updateMe(principal, new UpdateMeRequest("New Name", null));
 
         assertThat(response.getBody().getData().fullName()).isEqualTo("New Name");
     }
@@ -82,15 +85,15 @@ class UserControllerTest {
     @Test
     void changePassword_ValidRequest_ReturnsSuccess() {
         doNothing().when(userService)
-                .changePassword("khach1@gmail.com", "oldPass", "newPass");
+                .changePassword(eq("khach1@gmail.com"), any(ChangePasswordRequest.class));
 
         ResponseEntity<ApiResponse<String>> response =
                 userController.changePassword(principal,
-                        Map.of("oldPassword", "oldPass", "newPassword", "newPass"));
+                        new ChangePasswordRequest("oldPass", "newPass"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody().isSuccess()).isTrue();
-        verify(userService).changePassword("khach1@gmail.com", "oldPass", "newPass");
+        verify(userService).changePassword(eq("khach1@gmail.com"), any(ChangePasswordRequest.class));
     }
 
     // --- CN1: Linked accounts ---
@@ -116,14 +119,14 @@ class UserControllerTest {
     @Test
     void linkSocialAccount_ValidProvider_ReturnsSuccess() {
         doNothing().when(userService)
-                .linkSocialAccount("khach1@gmail.com", "GOOGLE", "mock-token");
+                .linkSocialAccount(eq("khach1@gmail.com"), any(LinkSocialAccountRequest.class));
 
         ResponseEntity<ApiResponse<String>> response =
                 userController.linkSocialAccount(principal,
-                        Map.of("provider", "GOOGLE", "token", "mock-token"));
+                        new LinkSocialAccountRequest("GOOGLE", "mock-token"));
 
         assertThat(response.getBody().isSuccess()).isTrue();
-        verify(userService).linkSocialAccount("khach1@gmail.com", "GOOGLE", "mock-token");
+        verify(userService).linkSocialAccount(eq("khach1@gmail.com"), any(LinkSocialAccountRequest.class));
     }
 
     // --- CN1: Unlink phone ---

@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import com.lottery.checker.dto.request.UpdateUserRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -142,10 +142,10 @@ class AdminUserControllerTest {
                 "0910000001", "Le Van Tam", Role.ROLE_ADMIN,
                 true, LocalDateTime.now(), LocalDateTime.now()
         );
-        when(userService.updateUser(3L, null, null, Role.ROLE_ADMIN, null))
+        when(userService.updateUser(eq(3L), any(UpdateUserRequest.class)))
                 .thenReturn(updated);
 
-        Map<String, Object> payload = Map.of("role", "ROLE_ADMIN");
+        UpdateUserRequest payload = new UpdateUserRequest(null, null, "ROLE_ADMIN", null);
         ResponseEntity<ApiResponse<UserResponse>> response =
                 adminUserController.updateUser(3L, payload);
 
@@ -159,10 +159,10 @@ class AdminUserControllerTest {
                 "0910000001", "New Name", Role.ROLE_USER,
                 false, LocalDateTime.now(), LocalDateTime.now()
         );
-        when(userService.updateUser(3L, "New Name", null, null, false))
+        when(userService.updateUser(eq(3L), any(UpdateUserRequest.class)))
                 .thenReturn(updated);
 
-        Map<String, Object> payload = Map.of("fullName", "New Name", "isActive", false);
+        UpdateUserRequest payload = new UpdateUserRequest("New Name", null, null, false);
         ResponseEntity<ApiResponse<UserResponse>> response =
                 adminUserController.updateUser(3L, payload);
 

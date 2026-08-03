@@ -3,7 +3,6 @@ package com.lottery.checker.controller;
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
-import com.lottery.checker.entity.Role;
 import com.lottery.checker.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
@@ -48,15 +46,8 @@ public class AdminUserController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> payload) {
-        
-        String fullName = (String) payload.get("fullName");
-        String phone = (String) payload.get("phone");
-        String roleStr = (String) payload.get("role");
-        Role role = roleStr != null ? Role.valueOf(roleStr) : null;
-        Boolean isActive = (Boolean) payload.get("isActive");
-
-        return ResponseEntity.ok(ApiResponse.success(userService.updateUser(id, fullName, phone, role, isActive)));
+            @Valid @RequestBody com.lottery.checker.dto.request.UpdateUserRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateUser(id, request)));
     }
 
     @PostMapping("/send-email")
@@ -146,7 +137,7 @@ public class AdminUserController {
             workbook.write(bos);
             return bos.toByteArray();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate Excel file", e);
+            throw new IllegalStateException("Failed to generate Excel file", e);
         }
     }
 

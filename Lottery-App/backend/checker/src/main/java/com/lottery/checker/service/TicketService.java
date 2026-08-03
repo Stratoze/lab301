@@ -25,7 +25,7 @@ public interface TicketService {
             Pageable pageable
     );
 
-    void updateStatus(Long id, String status);
+    void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request);
 
-    void updateStatus(Long id, String status, String adminEmail);
+    void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request, String adminEmail);
 }

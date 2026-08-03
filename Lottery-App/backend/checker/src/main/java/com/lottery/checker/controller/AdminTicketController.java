@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/tickets")
@@ -77,10 +76,10 @@ public class AdminTicketController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<String>> updateStatus(
             @PathVariable Long id,
-            @RequestBody Map<String, String> payload,
+            @Valid @RequestBody com.lottery.checker.dto.request.UpdateTicketStatusRequest request,
             Principal principal
     ) {
-        ticketService.updateStatus(id, payload.get("status"), principal.getName());
+        ticketService.updateStatus(id, request, principal.getName());
         return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
     }
 }

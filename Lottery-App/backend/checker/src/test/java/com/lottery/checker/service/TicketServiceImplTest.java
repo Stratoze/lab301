@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -261,7 +262,7 @@ class TicketServiceImplTest {
         when(resultRepository.findById(1L)).thenReturn(Optional.of(savedResult));
         when(resultRepository.save(any(LotteryResult.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ticketService.updateStatus(1L, "PUBLISH");
+        ticketService.updateStatus(1L, new UpdateTicketStatusRequest("PUBLISH"));
 
         ArgumentCaptor<LotteryResult> resultCaptor = ArgumentCaptor.forClass(LotteryResult.class);
         verify(resultRepository).save(resultCaptor.capture());
@@ -277,7 +278,7 @@ class TicketServiceImplTest {
         when(resultRepository.findById(1L)).thenReturn(Optional.of(savedResult));
         when(resultRepository.save(any(LotteryResult.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ticketService.updateStatus(1L, "UNPUBLISH");
+        ticketService.updateStatus(1L, new UpdateTicketStatusRequest("UNPUBLISH"));
 
         ArgumentCaptor<LotteryResult> resultCaptor = ArgumentCaptor.forClass(LotteryResult.class);
         verify(resultRepository).save(resultCaptor.capture());

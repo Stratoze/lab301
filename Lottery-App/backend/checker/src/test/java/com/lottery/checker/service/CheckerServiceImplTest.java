@@ -1,5 +1,8 @@
 package com.lottery.checker.service;
 
+import com.lottery.checker.dto.request.CheckTicketsRequest;
+import com.lottery.checker.dto.response.CheckTicketResponse;
+import com.lottery.checker.dto.response.HistorySessionResponse;
 import com.lottery.checker.entity.CheckHistory;
 import com.lottery.checker.entity.CheckSession;
 import com.lottery.checker.entity.LotteryResult;
@@ -23,7 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,12 +120,8 @@ class CheckerServiceImplTest {
     void guestCheck_WinningTicket_ReturnsCorrectPrize() {
         mockPublishedResultLookup();
 
-        Map<String, Object> response = checkerService.checkTickets(
-                1,
-                drawDate,
-                List.of("123485"),
-                null
-        );
+        CheckTicketsRequest req = new CheckTicketsRequest(1, drawDate, List.of("123485"));
+        CheckTicketResponse response = checkerService.checkTickets(req, null);
 
         ArgumentCaptor<CheckSession> sessionCaptor =
                 ArgumentCaptor.forClass(CheckSession.class);
@@ -136,26 +134,18 @@ class CheckerServiceImplTest {
         assertThat(savedSession.getTotalSpent()).isEqualTo(10000L);
         assertThat(savedSession.getTotalWon()).isEqualTo(100000L);
 
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> details =
-                (List<Map<String, Object>>) response.get("details");
-
-        assertThat(details).hasSize(1);
-        assertThat(details.get(0)).containsEntry("isWon", true);
-        assertThat(details.get(0)).containsEntry("prize", "G8");
-        assertThat(details.get(0)).containsEntry("amount", 100000L);
+        assertThat(response.details()).hasSize(1);
+        assertThat(response.details().get(0).isWon()).isTrue();
+        assertThat(response.details().get(0).prize()).isEqualTo("G8");
+        assertThat(response.details().get(0).amount()).isEqualTo(100000L);
     }
 
     @Test
     void guestCheck_LosingTicket_ReturnsNoPrize() {
         mockPublishedResultLookup();
 
-        Map<String, Object> response = checkerService.checkTickets(
-                1,
-                drawDate,
-                List.of("000000"),
-                null
-        );
+        CheckTicketsRequest req = new CheckTicketsRequest(1, drawDate, List.of("000000"));
+        CheckTicketResponse response = checkerService.checkTickets(req, null);
 
         ArgumentCaptor<CheckSession> sessionCaptor =
                 ArgumentCaptor.forClass(CheckSession.class);
@@ -167,13 +157,9 @@ class CheckerServiceImplTest {
         assertThat(savedSession.getTotalSpent()).isEqualTo(10000L);
         assertThat(savedSession.getTotalWon()).isEqualTo(0L);
 
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> details =
-                (List<Map<String, Object>>) response.get("details");
-
-        assertThat(details.get(0)).containsEntry("isWon", false);
-        assertThat(details.get(0)).containsEntry("prize", "None");
-        assertThat(details.get(0)).containsEntry("amount", 0L);
+        assertThat(response.details().get(0).isWon()).isFalse();
+        assertThat(response.details().get(0).prize()).isEqualTo("None");
+        assertThat(response.details().get(0).amount()).isEqualTo(0L);
     }
 
     @Test
@@ -189,12 +175,8 @@ class CheckerServiceImplTest {
                 anyList()
         )).thenReturn(List.of());
 
-        Map<String, Object> response = checkerService.checkTickets(
-                1,
-                drawDate,
-                List.of("123485", "000000", "999999"),
-                "khach1@gmail.com"
-        );
+        CheckTicketsRequest req = new CheckTicketsRequest(1, drawDate, List.of("123485", "000000", "999999"));
+        CheckTicketResponse response = checkerService.checkTickets(req, "khach1@gmail.com");
 
         ArgumentCaptor<CheckSession> sessionCaptor =
                 ArgumentCaptor.forClass(CheckSession.class);
@@ -206,12 +188,7 @@ class CheckerServiceImplTest {
         assertThat(savedSession.getTotalSpent()).isEqualTo(30000L);
         assertThat(savedSession.getTotalWon()).isEqualTo(100000L + 2000000000L);
         assertThat(savedSession.getHistories()).hasSize(3);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> details =
-                (List<Map<String, Object>>) response.get("details");
-
-        assertThat(details).hasSize(3);
+        assertThat(response.details()).hasSize(3);
     }
 
     @Test
@@ -226,19 +203,11 @@ class CheckerServiceImplTest {
 
         mockPublishedResultLookup();
 
-        Map<String, Object> response = checkerService.checkTickets(
-                1,
-                drawDate,
-                List.of("85"),
-                null
-        );
+        CheckTicketsRequest req = new CheckTicketsRequest(1, drawDate, List.of("85"));
+        CheckTicketResponse response = checkerService.checkTickets(req, null);
 
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> details =
-                (List<Map<String, Object>>) response.get("details");
-
-        assertThat(details.get(0)).containsEntry("prize", "G6");
-        assertThat(details.get(0)).containsEntry("amount", 400000L);
+        assertThat(response.details().get(0).prize()).isEqualTo("G6");
+        assertThat(response.details().get(0).amount()).isEqualTo(400000L);
     }
 
     @Test
@@ -247,12 +216,8 @@ class CheckerServiceImplTest {
 
         assertThat(publishedResult.getTotalQueries()).isEqualTo(0L);
 
-        checkerService.checkTickets(
-                1,
-                drawDate,
-                List.of("123485"),
-                null
-        );
+        CheckTicketsRequest req = new CheckTicketsRequest(1, drawDate, List.of("123485"));
+        checkerService.checkTickets(req, null);
 
         verify(resultRepository).incrementTotalQueries(1L);
     }
@@ -291,17 +256,12 @@ class CheckerServiceImplTest {
         when(sessionRepository.findAllWithHistoriesByUserId(3L))
         .thenReturn(List.of(session));
 
-        List<Map<String, Object>> history =
+        List<HistorySessionResponse> history =
                 checkerService.getUserHistory("khach1@gmail.com");
 
         assertThat(history).hasSize(1);
-        assertThat(history.get(0)).containsEntry("totalSpent", 20000L);
-        assertThat(history.get(0)).containsEntry("totalWon", 100000L);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> tickets =
-                (List<Map<String, Object>>) history.get(0).get("tickets");
-
-        assertThat(tickets).hasSize(2);
+        assertThat(history.get(0).totalSpent()).isEqualTo(20000L);
+        assertThat(history.get(0).totalWon()).isEqualTo(100000L);
+        assertThat(history.get(0).tickets()).hasSize(2);
     }
 }

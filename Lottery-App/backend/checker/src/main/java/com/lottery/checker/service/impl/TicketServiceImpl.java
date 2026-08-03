@@ -1,5 +1,9 @@
 package com.lottery.checker.service.impl;
 
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
+import com.lottery.checker.exception.NotFoundException;
+
 import com.lottery.checker.dto.request.CreateTicketRequest;
 import com.lottery.checker.dto.request.PrizeRequest;
 import com.lottery.checker.dto.response.PagedResponse;
@@ -56,7 +60,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketResponse createTicket(CreateTicketRequest request, String adminEmail) {
         LotteryStation station = stationRepository.findById(request.stationId())
-                .orElseThrow(() -> new RuntimeException("Station not found"));
+                .orElseThrow(() -> new NotFoundException("Station not found"));
 
         String status = normalizeStatus(request.status());
         validatePrizes(request.prizes());
@@ -65,7 +69,7 @@ public class TicketServiceImpl implements TicketService {
                 resultRepository.findByStationIdAndDrawDate(request.stationId(), request.drawDate());
 
         if (existing.isPresent()) {
-            throw new RuntimeException("A result already exists for this station and draw date.");
+            throw new ConflictException("A result already exists for this station and draw date.");
         }
 
         LotteryResult result = LotteryResult.builder()
@@ -85,10 +89,10 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketResponse updateTicket(Long id, CreateTicketRequest request, String adminEmail) {
         LotteryResult result = resultRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new NotFoundException("Ticket not found"));
 
         LotteryStation station = stationRepository.findById(request.stationId())
-                .orElseThrow(() -> new RuntimeException("Station not found"));
+                .orElseThrow(() -> new NotFoundException("Station not found"));
 
         String status = normalizeStatus(request.status());
         validatePrizes(request.prizes());
@@ -97,7 +101,7 @@ public class TicketServiceImpl implements TicketService {
                 resultRepository.findByStationIdAndDrawDate(request.stationId(), request.drawDate());
 
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
-            throw new RuntimeException("A result already exists for this station and draw date.");
+            throw new ConflictException("A result already exists for this station and draw date.");
         }
 
         result.setStation(station);
@@ -135,17 +139,17 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public void updateStatus(Long id, String status) {
-        updateStatus(id, status, null);
+    public void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request) {
+        updateStatus(id, request, null);
     }
 
     @Override
     @Transactional
-    public void updateStatus(Long id, String status, String adminEmail) {
+    public void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request, String adminEmail) {
         LotteryResult result = resultRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new NotFoundException("Ticket not found"));
 
-        String normalizedStatus = normalizeStatus(status);
+        String normalizedStatus = normalizeStatus(request.status());
         result.setStatus(normalizedStatus);
 
         if ("PUBLISH".equals(normalizedStatus)) {
@@ -203,7 +207,7 @@ public class TicketServiceImpl implements TicketService {
         String normalized = status.trim().toUpperCase();
 
         if (!normalized.equals("PUBLISH") && !normalized.equals("UNPUBLISH")) {
-            throw new RuntimeException("Invalid ticket status. Allowed values are PUBLISH or UNPUBLISH.");
+            throw new BadRequestException("Invalid ticket status. Allowed values are PUBLISH or UNPUBLISH.");
         }
 
         return normalized;
@@ -211,29 +215,29 @@ public class TicketServiceImpl implements TicketService {
 
     private void validatePrizes(List<PrizeRequest> prizes) {
         if (prizes == null || prizes.isEmpty()) {
-            throw new RuntimeException("Prize details are required");
+            throw new BadRequestException("Prize details are required");
         }
 
         Set<String> seen = new HashSet<>();
 
         for (PrizeRequest prize : prizes) {
             if (prize.type() == null || prize.type().isBlank()) {
-                throw new RuntimeException("Prize type is required");
+                throw new BadRequestException("Prize type is required");
             }
 
             if (prize.rewardAmount() == null) {
-                throw new RuntimeException("Reward amount is required");
+                throw new BadRequestException("Reward amount is required");
             }
 
             String type = prize.type().trim().toUpperCase();
             Integer expectedLength = PRIZE_LENGTHS.get(type);
 
             if (expectedLength == null) {
-                throw new RuntimeException("Invalid prize type: " + type);
+                throw new BadRequestException("Invalid prize type: " + type);
             }
 
             if (prize.winningNumbers() == null || prize.winningNumbers().isBlank()) {
-                throw new RuntimeException("Winning numbers are required for prize " + type);
+                throw new BadRequestException("Winning numbers are required for prize " + type);
             }
 
             String[] numbers = prize.winningNumbers().split("[,\\s]+");
@@ -246,20 +250,17 @@ public class TicketServiceImpl implements TicketService {
                 }
 
                 if (!number.matches("\\d+")) {
-                    throw new RuntimeException("Winning numbers must contain digits only. Invalid value: " + number);
+                    throw new BadRequestException("Winning numbers must contain digits only. Invalid value: " + number);
                 }
 
                 if (number.length() != expectedLength) {
-                    throw new RuntimeException(
-                            "Prize " + type + " requires " + expectedLength +
-                            "-digit numbers. Invalid value: " + number
-                    );
+                    throw new BadRequestException("Prize " + type + " requires " + expectedLength + "-digit numbers. Invalid value: " + number);
                 }
 
                 String key = type + ":" + number;
 
                 if (!seen.add(key)) {
-                    throw new RuntimeException("Duplicate winning number detected for prize " + type + ": " + number);
+                    throw new ConflictException("Duplicate winning number detected for prize " + type + ": " + number);
                 }
             }
         }

@@ -4,12 +4,10 @@ import com.lottery.checker.dto.request.RegisterRequest;
 import com.lottery.checker.dto.response.LinkedAccountsResponse;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
-import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface UserService {
@@ -28,13 +26,13 @@ public interface UserService {
 
     void updateStatus(List<Long> ids, boolean isActive);
 
-    UserResponse updateUser(Long id, String fullName, String phone, Role role, Boolean isActive);
+    UserResponse updateUser(Long id, com.lottery.checker.dto.request.UpdateUserRequest request);
 
     UserResponse getMe(String email);
 
-    UserResponse updateMe(String email, Map<String, String> updates);
+    UserResponse updateMe(String email, com.lottery.checker.dto.request.UpdateMeRequest request);
 
-    void changePassword(String email, String oldPassword, String newPassword);
+    void changePassword(String email, com.lottery.checker.dto.request.ChangePasswordRequest request);
 
     void requestPasswordReset(String email);
 
@@ -48,7 +46,7 @@ public interface UserService {
 
     LinkedAccountsResponse getLinkedAccounts(String email);
 
-    void linkSocialAccount(String email, String provider, String token);
+    void linkSocialAccount(String email, com.lottery.checker.dto.request.LinkSocialAccountRequest request);
 
     void unlinkPhone(String email);
 }

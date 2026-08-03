@@ -2,11 +2,13 @@ package com.lottery.checker.controller;
 
 import com.lottery.checker.dto.response.ApiResponse;
 import com.lottery.checker.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/v1/password")
@@ -16,14 +18,14 @@ public class PasswordController {
     private final UserService userService;
 
     @PostMapping("/forgot")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody Map<String, String> body) {
-        userService.requestPasswordReset(body.get("email"));
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody com.lottery.checker.dto.request.ForgotPasswordRequest request) {
+        userService.requestPasswordReset(request.email());
         return ResponseEntity.ok(ApiResponse.success("If the email exists, a reset link has been sent."));
     }
 
     @PostMapping("/reset")
-    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody Map<String, String> body) {
-        userService.resetPassword(body.get("token"), body.get("newPassword"));
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody com.lottery.checker.dto.request.ResetPasswordRequest request) {
+        userService.resetPassword(request.token(), request.newPassword());
         return ResponseEntity.ok(ApiResponse.success("Password has been reset successfully."));
     }
     

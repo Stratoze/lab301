@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.security.Principal;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/user")
@@ -24,13 +24,13 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> updateMe(Principal principal, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(ApiResponse.success(userService.updateMe(principal.getName(), body)));
+    public ResponseEntity<ApiResponse<UserResponse>> updateMe(Principal principal, @Valid @RequestBody com.lottery.checker.dto.request.UpdateMeRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateMe(principal.getName(), request)));
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<String>> changePassword(Principal principal, @RequestBody Map<String, String> body) {
-        userService.changePassword(principal.getName(), body.get("oldPassword"), body.get("newPassword"));
+    public ResponseEntity<ApiResponse<String>> changePassword(Principal principal, @Valid @RequestBody com.lottery.checker.dto.request.ChangePasswordRequest request) {
+        userService.changePassword(principal.getName(), request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
     }
 
@@ -40,8 +40,8 @@ public class UserController {
     }
 
     @PostMapping("/link-social")
-    public ResponseEntity<ApiResponse<String>> linkSocialAccount(Principal principal, @RequestBody Map<String, String> body) {
-        userService.linkSocialAccount(principal.getName(), body.get("provider"), body.get("token"));
+    public ResponseEntity<ApiResponse<String>> linkSocialAccount(Principal principal, @Valid @RequestBody com.lottery.checker.dto.request.LinkSocialAccountRequest request) {
+        userService.linkSocialAccount(principal.getName(), request);
         return ResponseEntity.ok(ApiResponse.success("Account linked successfully"));
     }
 

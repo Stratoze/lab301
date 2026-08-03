@@ -1,5 +1,8 @@
 package com.lottery.checker.service.impl;
 
+import com.lottery.checker.exception.ConflictException;
+import com.lottery.checker.exception.NotFoundException;
+
 import com.lottery.checker.entity.CheckHistory;
 import com.lottery.checker.entity.CheckSession;
 import com.lottery.checker.entity.LotteryResult;
@@ -17,9 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,16 +33,18 @@ public class CheckerServiceImpl implements CheckerService {
 
     @Override
     @Transactional
-    public Map<String, Object> checkTickets(
-            Integer stationId,
-            LocalDate date,
-            List<String> numbers,
+    public com.lottery.checker.dto.response.CheckTicketResponse checkTickets(
+            com.lottery.checker.dto.request.CheckTicketsRequest request,
             String userEmail
     ) {
+        Integer stationId = request.stationId();
+        LocalDate date = request.date();
+        List<String> numbers = request.numbers();
+
         LotteryResult result = resultRepository
                 .findByStationIdAndDrawDate(stationId, date)
                 .filter(r -> "PUBLISH".equals(r.getStatus()))
-                .orElseThrow(() -> new RuntimeException("No published results found for this date."));
+                .orElseThrow(() -> new NotFoundException("No published results found for this date."));
 
         User user = userEmail != null
                 ? userRepository.findByEmail(userEmail).orElse(null)
@@ -57,11 +60,7 @@ public class CheckerServiceImpl implements CheckerService {
             );
 
             if (!duplicates.isEmpty()) {
-                throw new RuntimeException(
-                        "You have already checked ticket(s): " +
-                        String.join(", ", duplicates) +
-                        " for this draw. Each ticket can only be checked once."
-                );
+                throw new ConflictException("You have already checked ticket(s): " + String.join(", ", duplicates) + " for this draw. Each ticket can only be checked once.");
             }
         }
 
@@ -71,7 +70,7 @@ public class CheckerServiceImpl implements CheckerService {
                 .build();
 
         long totalWon = 0;
-        List<Map<String, Object>> detailResults = new ArrayList<>();
+        List<com.lottery.checker.dto.response.CheckTicketResponse.CheckDetail> detailResults = new ArrayList<>();
 
         for (String num : numbers) {
             String cleanNum = num.trim();
@@ -94,11 +93,11 @@ public class CheckerServiceImpl implements CheckerService {
 
             session.getHistories().add(history);
 
-            detailResults.add(Map.of(
-                    "number", cleanNum,
-                    "isWon", isWon,
-                    "prize", isWon ? winningPrize.getPrizeType() : "None",
-                    "amount", amount
+            detailResults.add(new com.lottery.checker.dto.response.CheckTicketResponse.CheckDetail(
+                    cleanNum,
+                    isWon,
+                    isWon ? winningPrize.getPrizeType() : "None",
+                    amount
             ));
         }
 
@@ -108,12 +107,9 @@ public class CheckerServiceImpl implements CheckerService {
         // Atomic increment to avoid race condition under concurrent requests
         resultRepository.incrementTotalQueries(result.getId());
 
-        return Map.of(
-                "summary", Map.of(
-                        "totalSpent", session.getTotalSpent(),
-                        "totalWon", totalWon
-                ),
-                "details", detailResults
+        return new com.lottery.checker.dto.response.CheckTicketResponse(
+                new com.lottery.checker.dto.response.CheckTicketResponse.CheckSummary(session.getTotalSpent(), totalWon),
+                detailResults
         );
     }
 
@@ -131,51 +127,34 @@ public class CheckerServiceImpl implements CheckerService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getUserHistory(String email) {
+    public List<com.lottery.checker.dto.response.HistorySessionResponse> getUserHistory(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         List<CheckSession> sessions =
                 sessionRepository.findAllWithHistoriesByUserId(user.getId());
 
         return sessions.stream()
                 .map(session -> {
-                    Map<String, Object> map = new HashMap<>();
-
-                    map.put("id", session.getId());
-                    map.put("date", session.getCreatedAt());
-                    map.put("totalSpent", session.getTotalSpent());
-                    map.put("totalWon", session.getTotalWon());
-
-                    List<Map<String, Object>> tickets = session.getHistories().stream()
-                            .map(history -> {
-                                Map<String, Object> ticket = new HashMap<>();
-
-                                ticket.put("number", history.getTicketNumber());
-                                ticket.put("isWon", history.getIsWon());
-                                ticket.put(
-                                        "prize",
-                                        history.getWonPrize() != null
-                                                ? history.getWonPrize()
-                                                : "No Prize"
-                                );
-                                ticket.put("amount", history.getWonAmount());
-                                ticket.put("station", history.getResult().getStation().getName());
-                                ticket.put("drawDate", history.getResult().getDrawDate());
-                                ticket.put(
-                                        "checkTime",
-                                        history.getCheckTime() != null
-                                                ? history.getCheckTime()
-                                                : session.getCreatedAt()
-                                );
-
-                                return ticket;
-                            })
+                    List<com.lottery.checker.dto.response.HistorySessionResponse.HistoryTicketResponse> tickets = session.getHistories().stream()
+                            .map(history -> new com.lottery.checker.dto.response.HistorySessionResponse.HistoryTicketResponse(
+                                    history.getTicketNumber(),
+                                    history.getIsWon(),
+                                    history.getWonPrize() != null ? history.getWonPrize() : "No Prize",
+                                    history.getWonAmount(),
+                                    history.getResult().getStation().getName(),
+                                    history.getResult().getDrawDate(),
+                                    history.getCheckTime() != null ? history.getCheckTime() : session.getCreatedAt()
+                            ))
                             .toList();
 
-                    map.put("tickets", tickets);
-
-                    return map;
+                    return new com.lottery.checker.dto.response.HistorySessionResponse(
+                            session.getId(),
+                            session.getCreatedAt(),
+                            session.getTotalSpent(),
+                            session.getTotalWon(),
+                            tickets
+                    );
                 })
                 .toList();
     }
