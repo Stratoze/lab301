@@ -1,7 +1,10 @@
--- =================================================================================
 -- PROJECT: DÒ VÉ SỐ (LOTTERY CHECKER) - FRESH DATABASE SCRIPT (SRS-COMPLIANT)
 -- Fixes applied: total_queries BIGINT, UNIQUE constraint prize_details, indexes
--- =================================================================================
+-- Synced with Lottery-App/mysql (01-schema.sql + 02-seed-dev.sql):
+--   + user_auth_providers composite uniques (provider+provider_id, user+provider)
+--   + Hà Nội G_DB/ticket fixed to 6 digits ('012345'), RES-VT/RES-BT codes -> 2024
+--   + check_sessions/check_histories made internally consistent
+--
 
 DROP DATABASE IF EXISTS lottery_db;
 CREATE DATABASE lottery_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -42,7 +45,9 @@ CREATE TABLE user_auth_providers (
     provider VARCHAR(20) NOT NULL, -- 'GOOGLE', 'FACEBOOK'
     provider_id VARCHAR(255) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_provider_account (provider, provider_id),
+    UNIQUE KEY uq_user_provider (user_id, provider)
 );
 
 CREATE TABLE password_reset_tokens (
@@ -176,8 +181,8 @@ INSERT INTO lottery_results (result_code, station_id, draw_date, status, total_q
 ('RES-HCM-23102023', 1, '2023-10-23', 'PUBLISH', 150, 1, 1, '2023-10-23 16:30:00'),
 ('RES-DT-23102023', 2, '2023-10-23', 'PUBLISH', 80, 1, 2, '2023-10-23 16:30:00'),
 ('RES-CM-23102023', 3, '2023-10-23', 'PUBLISH', 45, 2, 2, '2023-10-23 16:30:00'),
-('RES-VT-24102023', 4, '2024-10-24', 'PUBLISH', 120, 1, 1, '2024-10-24 16:30:00'),
-('RES-BT-24102023', 5, '2024-10-24', 'PUBLISH', 90, 2, 1, '2024-10-24 16:30:00'),
+('RES-VT-24102024', 4, '2024-10-24', 'PUBLISH', 120, 1, 1, '2024-10-24 16:30:00'),
+('RES-BT-24102024', 5, '2024-10-24', 'PUBLISH', 90, 2, 1, '2024-10-24 16:30:00'),
 ('RES-BL-24102023', 6, '2024-10-24', 'UNPUBLISH', 0, 1, NULL, NULL),
 ('RES-DN-21102023', 7, '2023-10-21', 'PUBLISH', 200, 1, 1, '2023-10-21 17:30:00'),
 ('RES-KH-22102023', 8, '2023-10-22', 'PUBLISH', 310, 2, 1, '2023-10-22 17:30:00'),
@@ -196,14 +201,14 @@ INSERT INTO prize_details (result_id, prize_type, winning_number, reward_amount)
 (1, 'G4', '11111', 3000000), (1, 'G4', '22222', 3000000), (1, 'G4', '33333', 3000000),
 (1, 'G3', '44444', 10000000), (1, 'G3', '55555', 10000000), (1, 'G2', '66666', 15000000),
 (1, 'G1', '77777', 30000000), (1, 'G_DB', '999999', 2000000000),
-(10, 'G_DB', '12345', 500000000), (10, 'G1', '54321', 10000000), -- Hà Nội
+(10, 'G_DB', '012345', 500000000), (10, 'G1', '54321', 10000000), -- Hà Nội (6 chữ số, đúng luật G_DB)
 (4, 'G8', '12', 100000), (4, 'G_DB', '123456', 2000000000); -- Vũng Tàu
 
 -- BẢNG 7: CHECK SESSIONS (15 records)
 INSERT INTO check_sessions (user_id, total_spent, total_won) VALUES
-(3, 20000, 100000), (4, 10000, 0), (NULL, 50000, 0), (5, 10000, 2000000000),
-(6, 20000, 400000), (7, 30000, 0), (8, 10000, 0), (NULL, 10000, 0),
-(10, 50000, 0), (11, 10000, 0), (12, 10000, 0), (13, 20000, 0),
+(3, 20000, 100000), (4, 10000, 0), (NULL, 10000, 0), (5, 10000, 2000000000),
+(6, 20000, 400000), (7, 30000, 0), (8, 10000, 0), (NULL, 10000, 500000000),
+(10, 10000, 0), (11, 10000, 0), (12, 10000, 0), (13, 10000, 0),
 (14, 10000, 0), (15, 10000, 0), (3, 10000, 0);
 
 -- BẢNG 8: CHECK HISTORIES (15 records)
@@ -212,6 +217,8 @@ INSERT INTO check_histories (session_id, result_id, ticket_number, is_won, won_p
 (2, 1, '111111', 0, NULL, 0), (4, 1, '999999', 1, 'G_DB', 2000000000),
 (5, 1, '123456', 0, NULL, 0), (5, 1, '005678', 1, 'G6', 400000),
 (6, 4, '000000', 0, NULL, 0), (6, 4, '111111', 0, NULL, 0), (6, 4, '222222', 0, NULL, 0),
-(8, 10, '12345', 1, 'G_DB', 500000000), -- Khách vãng lai thắng miền bắc
+(8, 10, '012345', 1, 'G_DB', 500000000), -- Khách vãng lai thắng miền bắc (vé 6 chữ số)
 (9, 1, '111111', 0, NULL, 0), (10, 1, '222222', 0, NULL, 0),
-(11, 1, '333333', 0, NULL, 0), (12, 1, '444444', 0, NULL, 0), (13, 1, '555555', 0, NULL, 0);
+(11, 1, '333333', 0, NULL, 0), (12, 1, '444444', 0, NULL, 0), (13, 1, '555555', 0, NULL, 0),
+(3, 1, '678901', 0, NULL, 0), (7, 1, '135791', 0, NULL, 0),
+(14, 10, '111222', 0, NULL, 0), (15, 4, '999888', 0, NULL, 0);
