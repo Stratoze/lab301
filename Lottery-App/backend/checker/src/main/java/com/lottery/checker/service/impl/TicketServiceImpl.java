@@ -6,6 +6,7 @@ import com.lottery.checker.exception.NotFoundException;
 
 import com.lottery.checker.dto.request.CreateTicketRequest;
 import com.lottery.checker.dto.request.PrizeRequest;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.TicketResponse;
 import com.lottery.checker.entity.LotteryResult;
@@ -139,13 +140,13 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request) {
+    public void updateStatus(Long id, UpdateTicketStatusRequest request) {
         updateStatus(id, request, null);
     }
 
     @Override
     @Transactional
-    public void updateStatus(Long id, com.lottery.checker.dto.request.UpdateTicketStatusRequest request, String adminEmail) {
+    public void updateStatus(Long id, UpdateTicketStatusRequest request, String adminEmail) {
         LotteryResult result = resultRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ticket not found"));
 

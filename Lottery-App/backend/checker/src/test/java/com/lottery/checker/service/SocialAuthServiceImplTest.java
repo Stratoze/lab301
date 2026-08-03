@@ -44,6 +44,9 @@ class SocialAuthServiceImplTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private UserCodeGenerator userCodeGenerator;
+
     private SocialAuthServiceImpl socialAuthService;
 
     private KeyPair rsaKeyPair;
@@ -52,7 +55,7 @@ class SocialAuthServiceImplTest {
     void setUp() throws Exception {
         // Constructor creates a real RestTemplate internally
         socialAuthService = new SocialAuthServiceImpl(
-                userRepository, authProviderRepository, jwtService
+                userRepository, authProviderRepository, jwtService, userCodeGenerator
         );
 
         // Swap the internal RestTemplate with our mock
@@ -149,7 +152,7 @@ class SocialAuthServiceImplTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findByEmail("newuser@gmail.com"))
                 .thenReturn(Optional.empty());
-        when(userRepository.countUsersByMonth(anyString())).thenReturn(5L);
+        when(userCodeGenerator.generate()).thenReturn("USR-08-2026-00000006");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
             User u = inv.getArgument(0);
             u.setId(20L);
@@ -331,7 +334,7 @@ class SocialAuthServiceImplTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findByEmail("fbuser@gmail.com"))
                 .thenReturn(Optional.empty());
-        when(userRepository.countUsersByMonth(anyString())).thenReturn(10L);
+        when(userCodeGenerator.generate()).thenReturn("USR-08-2026-00000011");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
             User u = inv.getArgument(0);
             u.setId(21L);

@@ -62,8 +62,13 @@ const LotteryNumberInput: React.FC<LotteryNumberInputProps> = ({
     }
     // Normal entry
     if (maxChunks === 1) {
-      // Single chunk: just limit to chunkSize
-      setCurrentInput(raw.slice(0, chunkSize));
+      const limited = raw.slice(0, chunkSize);
+      setCurrentInput(limited);
+      if (limited.length === chunkSize) {
+        commitChunks([limited], '');
+      } else {
+        emitChange([]); // clear form value if incomplete
+      }
       return;
     }
     // Multi-chunk
@@ -151,13 +156,13 @@ const LotteryNumberInput: React.FC<LotteryNumberInputProps> = ({
         {chunks.map((chunk, idx) => (
           <Tag
             key={idx}
-            closable={!disabled && maxChunks > 1}
+            closable={!disabled}
             onClose={(e) => {
               e.preventDefault();
               handleDeleteChunk(idx);
             }}
             icon={
-              maxChunks > 1 ? 
+              !disabled ? 
               <EditOutlined onClick={() => 
                 handleEditChunk(idx)} 
               /> : undefined}

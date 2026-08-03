@@ -86,9 +86,12 @@ const useLotteryChecker = () => {
 
     setLoading(true);
     try {
-      const res = await apiClient.post('/checker/check', nums, {
-        params: { stationId: form.stationId, date: form.date.format('YYYY-MM-DD') }
-      });
+      const payload = {
+        stationId: form.stationId,
+        date: form.date.format('YYYY-MM-DD'),
+        numbers: nums,
+      };
+      const res = await apiClient.post('/checker/check', payload);
       setResults(res.data.data);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string } } };

@@ -28,6 +28,7 @@ const CheckerForm: React.FC<CheckerFormProps> = ({ form, stations, isGuest, onCh
       <Select
         placeholder="Select Station"
         style={{ width: '100%' }}
+        value={form.stationId}
         onChange={(v) => onChange({ ...form, stationId: v, date: dayjs() })}
       >
         {stations.map((s) => (

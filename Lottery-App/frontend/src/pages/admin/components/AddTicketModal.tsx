@@ -123,16 +123,15 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
       }
     }
 
-    // Overlapping-number validation
+    // Overlapping-number validation (within same prize type only)
     for (let i = 0; i < prizes.length; i++) {
       const numsI = prizes[i].winningNumbers.split(',').filter((n: string) => n.trim());
-      for (let j = i + 1; j < prizes.length; j++) {
-        const numsJ = prizes[j].winningNumbers.split(',').filter((n: string) => n.trim());
-        for (const a of numsI) {
-          for (const b of numsJ) {
-            if (a !== b && (a.endsWith(b) || b.endsWith(a))) {
-              return message.error(`Overlapping numbers detected: "${a}" and "${b}". Please correct.`);
-            }
+      for (let a_idx = 0; a_idx < numsI.length; a_idx++) {
+        for (let b_idx = a_idx + 1; b_idx < numsI.length; b_idx++) {
+          const a = numsI[a_idx];
+          const b = numsI[b_idx];
+          if (a.endsWith(b) || b.endsWith(a)) {
+            return message.error(`Overlapping numbers detected in ${prizes[i].type}: "${a}" and "${b}". Please correct.`);
           }
         }
       }

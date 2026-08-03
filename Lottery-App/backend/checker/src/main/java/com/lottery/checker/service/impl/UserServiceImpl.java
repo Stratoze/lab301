@@ -4,8 +4,13 @@ import com.lottery.checker.exception.BadRequestException;
 import com.lottery.checker.exception.ConflictException;
 import com.lottery.checker.exception.NotFoundException;
 
+import com.lottery.checker.dto.request.ChangePasswordRequest;
+import com.lottery.checker.dto.request.LinkSocialAccountRequest;
 import com.lottery.checker.dto.request.RegisterRequest;
+import com.lottery.checker.dto.request.UpdateMeRequest;
+import com.lottery.checker.dto.request.UpdateUserRequest;
 import com.lottery.checker.dto.response.LinkedAccountsResponse;
+import com.lottery.checker.service.UserCodeGenerator;
 import com.lottery.checker.dto.response.PagedResponse;
 import com.lottery.checker.dto.response.UserResponse;
 import com.lottery.checker.entity.PasswordResetToken;
@@ -32,7 +37,6 @@ import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +53,7 @@ public class UserServiceImpl implements UserService {
     private final JavaMailSender mailSender;
     private final SocialAuthService socialAuthService;
     private final PasswordValidator passwordValidator;
+    private final UserCodeGenerator userCodeGenerator;
 
     @Value("${app.frontend-base-url}")
     private String frontendBaseUrl;
@@ -60,23 +65,13 @@ public class UserServiceImpl implements UserService {
             throw new ConflictException("Email already exists");
         }
 
-        if (request.phone() != null && !request.phone().isBlank()) {
-            String phone = request.phone().trim();
-
-            if (!phone.matches("^\\d{7,15}$")) {
-                throw new BadRequestException("Invalid phone number format");
-            }
-
-            if (userRepository.findByPhone(phone).isPresent()) {
-                throw new ConflictException("Phone number already exists");
-            }
-        }
+        String cleanPhone = validateAndCleanPhone(request.phone(), null);
 
         User user = User.builder()
-                .userCode(generateUserCode())
+                .userCode(userCodeGenerator.generate())
                 .email(request.email())
                 .fullName(request.fullName())
-                .phone(request.phone() != null && !request.phone().isBlank() ? request.phone().trim() : null)
+                .phone(cleanPhone)
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.ROLE_USER)
                 .isActive(true)
@@ -186,7 +181,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateUser(Long id, com.lottery.checker.dto.request.UpdateUserRequest req) {
+    public UserResponse updateUser(Long id, UpdateUserRequest req) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -195,21 +190,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (req.phone() != null) {
-            if (!req.phone().isBlank()) {
-                if (!req.phone().matches("^\\d{7,15}$")) {
-                    throw new BadRequestException("Invalid phone number format");
-                }
-
-                userRepository.findByPhone(req.phone())
-                        .filter(existing -> !existing.getId().equals(id))
-                        .ifPresent(existing -> {
-                            throw new ConflictException("Phone number already exists");
-                        });
-
-                user.setPhone(req.phone());
-            } else {
-                user.setPhone(null);
-            }
+            user.setPhone(validateAndCleanPhone(req.phone(), id));
         }
 
         if (req.role() != null && !req.role().isBlank()) {
@@ -235,7 +216,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateMe(String email, com.lottery.checker.dto.request.UpdateMeRequest req) {
+    public UserResponse updateMe(String email, UpdateMeRequest req) {
         User user = findByEmail(email);
 
         if (req.fullName() != null) {
@@ -243,23 +224,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (req.phone() != null) {
-            String phone = req.phone();
-
-            if (!phone.isBlank()) {
-                if (!phone.matches("^\\d{7,15}$")) {
-                    throw new BadRequestException("Invalid phone number format");
-                }
-
-                userRepository.findByPhone(phone)
-                        .filter(existing -> !existing.getId().equals(user.getId()))
-                        .ifPresent(existing -> {
-                            throw new ConflictException("Phone number already exists");
-                        });
-
-                user.setPhone(phone);
-            } else {
-                user.setPhone(null);
-            }
+            user.setPhone(validateAndCleanPhone(req.phone(), user.getId()));
         }
 
         return UserResponse.fromEntity(userRepository.save(user));
@@ -267,7 +232,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changePassword(String email, com.lottery.checker.dto.request.ChangePasswordRequest req) {
+    public void changePassword(String email, ChangePasswordRequest req) {
         User user = findByEmail(email);
 
         boolean isSettingInitialPassword = user.getPassword() == null;
@@ -390,7 +355,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void linkSocialAccount(String email, com.lottery.checker.dto.request.LinkSocialAccountRequest req) {
+    public void linkSocialAccount(String email, LinkSocialAccountRequest req) {
         User user = findByEmail(email);
 
         boolean alreadyLinked = userAuthProviderRepository.existsByUserAndProvider(user, req.provider().toUpperCase());
@@ -451,18 +416,17 @@ public class UserServiceImpl implements UserService {
                 .orElse(false);
     }
 
-    private String generateUserCode() {
-        LocalDateTime now = LocalDateTime.now();
-        String monthYear = now.format(DateTimeFormatter.ofPattern("MM-yyyy"));
-
-        long count = userRepository.countUsersByMonth(monthYear);
-        String code;
-
-        do {
-            count++;
-            code = String.format("USR-%s-%08d", monthYear, count);
-        } while (userRepository.findByUserCode(code).isPresent());
-
-        return code;
+    private String validateAndCleanPhone(String phone, Long excludeUserId) {
+        if (phone == null || phone.isBlank()) return null;
+        String trimmed = phone.trim();
+        if (!trimmed.matches("^\\d{7,15}$")) {
+            throw new BadRequestException("Invalid phone number format");
+        }
+        userRepository.findByPhone(trimmed)
+                .filter(existing -> excludeUserId == null || !existing.getId().equals(excludeUserId))
+                .ifPresent(existing -> {
+                    throw new ConflictException("Phone number already exists");
+                });
+        return trimmed;
     }
 }

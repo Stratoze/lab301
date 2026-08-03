@@ -2,6 +2,7 @@ package com.lottery.checker.service.impl;
 
 import com.lottery.checker.dto.request.SocialLoginRequest;
 import com.lottery.checker.dto.response.AuthResponse;
+import com.lottery.checker.service.UserCodeGenerator;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
 import com.lottery.checker.entity.UserAuthProvider;
@@ -21,7 +22,6 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +32,12 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
     public SocialAuthServiceImpl(UserRepository userRepository,
                                   UserAuthProviderRepository authProviderRepository,
-                                  JwtService jwtService) {
+                                  JwtService jwtService,
+                                  UserCodeGenerator userCodeGenerator) {
         this.userRepository = userRepository;
         this.authProviderRepository = authProviderRepository;
         this.jwtService = jwtService;
+        this.userCodeGenerator = userCodeGenerator;
 
         // RestTemplate with connect/read timeouts to prevent thread blocking
         var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
@@ -48,6 +50,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
     private final UserAuthProviderRepository authProviderRepository;
     private final JwtService jwtService;
     private final RestTemplate restTemplate;
+    private final UserCodeGenerator userCodeGenerator;
 
     /** JWKS cache with TTL (refresh every 6 hours) */
     private static final long JWKS_TTL_MS = 6 * 60 * 60 * 1000L;
@@ -90,7 +93,7 @@ public class SocialAuthServiceImpl implements SocialAuthService {
 
         if (user == null) {
             user = User.builder()
-                    .userCode(generateUserCode())
+                    .userCode(userCodeGenerator.generate())
                     .email(info.email() != null ? info.email() : info.providerId() + "@" + request.provider().toLowerCase() + ".social")
                     .fullName(info.name() != null ? info.name() : "Social User")
                     .password(null)
@@ -304,15 +307,6 @@ public class SocialAuthServiceImpl implements SocialAuthService {
                 .provider(provider.toUpperCase())
                 .providerId(info.providerId())
                 .build());
-    }
-
-    // ── DB?backed user code generation (survives restarts) ──
-
-    private String generateUserCode() {
-        LocalDateTime now = LocalDateTime.now();
-        String monthYear = now.format(DateTimeFormatter.ofPattern("MM-yyyy"));
-        long count = userRepository.countUsersByMonth(monthYear) + 1;
-        return String.format("USR-%s-%08d", monthYear, count);
     }
 
     private record SocialUserInfo(String providerId, String email, String name) {}

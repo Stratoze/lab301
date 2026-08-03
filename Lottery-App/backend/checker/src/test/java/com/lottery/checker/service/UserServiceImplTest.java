@@ -64,6 +64,9 @@ class UserServiceImplTest {
     @Mock
     private PasswordValidator passwordValidator;
 
+    @Mock
+    private UserCodeGenerator userCodeGenerator;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -121,6 +124,8 @@ class UserServiceImplTest {
 
         when(userRepository.findByPhone("0911111111"))
                 .thenReturn(Optional.empty());
+
+        when(userCodeGenerator.generate()).thenReturn("USR-08-2026-00000016");
 
         when(passwordEncoder.encode("StrongPass1!"))
                 .thenReturn("$2a$12$encoded...");
