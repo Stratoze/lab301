@@ -1,0 +1,473 @@
+==========================================================================
+  DO VE SO — AUTOMATED SECURITY / EDGE-CASE / E2E TEST RUNNER
+  Date    : 2026-08-05 00:25:02
+  Backend : http://localhost:8080/api/v1
+  E2E date: 2026-08-04  (station_id=1)
+==========================================================================
+
+  ✅ Backend is reachable.
+
+[CLEANUP] Removing stale test data from previous runs…
+  ⚠ cleanup 'E2E check_sessions' failed: mysql: [Warning] Using a password on the command line interface can be insecure.
+  ⚠ cleanup 'F02-X check_sessions' failed: mysql: [Warning] Using a password on the command line interface can be insecure.
+  ✅ Cleanup done (15/17 statements OK).
+
+[SETUP] Crafting JWT tokens (HS256, secret from env.properties)
+  Admin    → eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZ…
+  User     → eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJra…
+  Khach1   → eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJra…
+  Blocked  → eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb…
+  Expired  → eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJra…
+
+██████████████████████████████████████████████████████████████████████████
+  SECTION 1: SECURITY & EDGE CASES  (20 tests)
+██████████████████████████████████████████████████████████████████████████
+
+==========================================================================
+[PASS]  F1-20: No token → 401
+  GET http://localhost:8080/api/v1/user/me
+  Expected HTTP [401]  →  Got HTTP 401
+  Response: {"status":401,"message":"Authentication required. Please login.","data":null}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-01: Expired JWT → 401
+  GET http://localhost:8080/api/v1/user/me
+  Expected HTTP [401]  →  Got HTTP 401
+  Response: {"status":401,"message":"Authentication required. Please login.","data":null}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-02: Locked user + valid-signature JWT → 401
+  GET http://localhost:8080/api/v1/user/me
+  Expected HTTP [401]  →  Got HTTP 401
+  Response: {"status":401,"message":"Authentication required. Please login.","data":null}
+==========================================================================
+
+==========================================================================
+[PASS]  F1-23: USER calls /admin/users → 403
+  GET http://localhost:8080/api/v1/admin/users
+  Expected HTTP [403]  →  Got HTTP 403
+  Response: {"status":403,"message":"Access denied. Insufficient permissions.","data":null}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-03a: Empty login body → 400
+  POST http://localhost:8080/api/v1/auth/login
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"password: Password is required, email: Email is required","data":null,"timestamp":"2026-08-04T15:25:04.767278202"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-03b: Null numbers in checker → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": null}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"JSON parse error: Cannot construct instance of `com.lottery.checker.dto.request.CheckTicketsRequest`, problem: Cannot invoke \"java.util.Collection.isEmpty()\" because \"<parameter1>\" is null","data":null,"timestamp":"2026-08-04T15:25:04.791199819"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-03c: Completely empty body → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Required request body is missing: public org.springframework.http.ResponseEntity<com.lottery.checker.dto.response.ApiResponse<com.lottery.checker.dto.response.CheckTicketResponse>> com.lottery.checker.controller.CheckerController.checkTickets(com.lottery.checker.dto.request.CheckTicketsRequest,org.springframework.securit
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-09: Malformed JSON → clean 400, no stack trace
+  POST http://localhost:8080/api/v1/auth/login
+  Raw: {this is not valid json
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"JSON parse error: Unexpected character ('t' (code 116)): was expecting double-quote to start property name","data":null,"timestamp":"2026-08-04T15:25:04.81318745"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-04: >50 tickets → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["000001", "000002", "000003", "000004", "000005", "000006", "000007", "000008", "000009", "000010", "000011", "000012", "000013", "000014", "000015", "000016", "000017",
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"numbers: Maximum 50 tickets per check","data":null,"timestamp":"2026-08-04T15:25:04.828029899"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-05: Future date → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2027-12-31", "numbers": ["123456"]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Draw date cannot be in the future.","data":null,"timestamp":"2026-08-04T15:25:04.838655784"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-06a: Non-numeric ticket 'ABC123' → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["ABC123"]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"numbers[0]: Invalid ticket number format. Must be exactly 6 digits","data":null,"timestamp":"2026-08-04T15:25:04.863572948"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-06b: 5-digit ticket '12345' → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["12345"]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"numbers[0]: Invalid ticket number format. Must be exactly 6 digits","data":null,"timestamp":"2026-08-04T15:25:04.894069342"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-06c: Missing stationId → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"date": "2023-10-23", "numbers": ["123456"]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"stationId: Station ID is required","data":null,"timestamp":"2026-08-04T15:25:04.924924693"}
+==========================================================================
+
+==========================================================================
+[PASS]  F3-03: Guest sends 2 tickets → 400
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["123456", "654321"]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Guests can only check one ticket at a time. Please login to check multiple tickets.","data":null,"timestamp":"2026-08-04T15:25:04.957340479"}
+==========================================================================
+
+==========================================================================
+[PASS]  F3-13: Duplicate number in one request → 409
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["111222", "111222"]}
+  Expected HTTP [409]  →  Got HTTP 409
+  Response: {"success":false,"message":"Duplicate ticket number in request: \"111222\". Each ticket can only appear once.","data":null,"timestamp":"2026-08-04T15:25:04.974296723"}
+==========================================================================
+
+==========================================================================
+[PASS]  F3-14: Already-checked ticket (khach1+123485) → 409
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["123485"]}
+  Expected HTTP [409]  →  Got HTTP 409
+  Response: {"success":false,"message":"You have already checked ticket(s): 123485 for this draw. Each ticket can only be checked once.","data":null,"timestamp":"2026-08-04T15:25:04.998085251"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-07: SQL injection in admin search → safe 200
+  GET http://localhost:8080/api/v1/admin/users?keyword='; DROP TABLE users; --&page=0&size=20
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"content":[],"last":true,"page":0,"size":20,"totalElements":0,"totalPages":0},"timestamp":"2026-08-04T15:25:05.045402519"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-08: XSS in fullName → stored as text, no execution
+  POST http://localhost:8080/api/v1/auth/register
+  Payload: {"fullName": "<script>alert(1)</script>", "email": "xss-20260805_002502@test.com", "password": "SecurePass123!", "confirmPassword": "SecurePass123!"}
+  Expected HTTP [200, 201]  →  Got HTTP 201
+  Response: {"success":true,"message":"Success","data":"User registered successfully","timestamp":"2026-08-04T15:25:05.36419104"}
+==========================================================================
+  [DB-ASSERT] F1-01 supplement: user_code+role = USR-08-2026-00000001	ROLE_USER
+
+==========================================================================
+[PASS]  SEC-11: No 'password' key in /user/me response
+  GET http://localhost:8080/api/v1/user/me
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"id":4,"userCode":"USR-10-2023-00000004","email":"khach2@gmail.com","phone":"0910000002","fullName":"Trần Thị Chín","role":"ROLE_USER","isActive":true,"lastLogin":"2026-08-01T15:21:08","createdAt":"2026-08-04T15:21:08"},"timestamp":"2026-08-04T15:25:05.519847718"}
+==========================================================================
+
+==========================================================================
+[TEST]  SEC-12: BCrypt hash in DB (docker exec SQL)
+[PASS]  SEC-12: hash = $2a$12$Jf6a0eHS/vrrMvw3Psy.nO...  (BCrypt $2a$ confirmed)
+
+==========================================================================
+[TEST]  SEC-10: Concurrent registration — 5 simultaneous requests
+  Design contract: no 500s, no duplicate user_codes.
+  409 under contention is acceptable (unique constraint = safety net).
+==========================================================================
+  race1-20260805_002502@test.com  →  HTTP 201
+  race2-20260805_002502@test.com  →  HTTP 409
+  race3-20260805_002502@test.com  →  HTTP 409
+  race4-20260805_002502@test.com  →  HTTP 409
+  race5-20260805_002502@test.com  →  HTTP 409
+[PASS]  SEC-10: 1 created, 4 got 409 (retry-loop contention).
+  No 500s: True | At least 1 success: True
+  Defence note: retry-loop + unique constraint is the design;
+  production would use DB sequence or SELECT FOR UPDATE.
+
+██████████████████████████████████████████████████████████████████████████
+  SECTION 1a: PASSWORD RESET — TOKEN LIFECYCLE (throwaway user)
+██████████████████████████████████████████████████████████████████████████
+
+==========================================================================
+[PASS]  SEC-14a: Register throwaway user for reset flow
+  POST http://localhost:8080/api/v1/auth/register
+  Payload: {"fullName": "Reset Test User", "email": "reset-test-20260805_002502@test.com", "password": "InitialPass123!", "confirmPassword": "InitialPass123!"}
+  Expected HTTP [200, 201]  →  Got HTTP 201
+  Response: {"success":true,"message":"Success","data":"User registered successfully","timestamp":"2026-08-04T15:25:06.322156151"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-14b: Forgot password for existing email → 200 generic
+  POST http://localhost:8080/api/v1/password/forgot
+  Payload: {"email": "reset-test-20260805_002502@test.com"}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":"If the email exists, a reset link has been sent.","timestamp":"2026-08-04T15:25:10.631969866"}
+==========================================================================
+  [DB] Fetched reset token: 67c455c6-5ef9-46…
+
+==========================================================================
+[PASS]  SEC-14c: Validate fresh token → 200
+  GET http://localhost:8080/api/v1/password/validate?token=67c455c6-5ef9-46f0-9b8b-caf479d7757b
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"valid":true},"timestamp":"2026-08-04T15:25:10.774877926"}
+==========================================================================
+
+==========================================================================
+[PASS]  F1-14: Reset password with valid token → 200
+  POST http://localhost:8080/api/v1/password/reset
+  Payload: {"token": "67c455c6-5ef9-46f0-9b8b-caf479d7757b", "newPassword": "ResetPass999!", "confirmPassword": "ResetPass999!"}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":"Password has been reset successfully.","timestamp":"2026-08-04T15:25:11.044663028"}
+==========================================================================
+
+==========================================================================
+[PASS]  F1-15: Reuse consumed token → 409
+  POST http://localhost:8080/api/v1/password/reset
+  Payload: {"token": "67c455c6-5ef9-46f0-9b8b-caf479d7757b", "newPassword": "AnotherPass1!", "confirmPassword": "AnotherPass1!"}
+  Expected HTTP [409]  →  Got HTTP 409
+  Response: {"success":false,"message":"This reset link has already been used","data":null,"timestamp":"2026-08-04T15:25:11.057997675"}
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-14d: Login with reset password → 200
+  POST http://localhost:8080/api/v1/auth/login
+  Payload: {"email": "reset-test-20260805_002502@test.com", "password": "ResetPass999!"}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyQ29kZSI6IlVTUi0wOC0yMDI2LTAwMDAwMDAzIiwiZnVsbE5hbWUiOiJSZXNldCBUZXN0IFVzZXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwic3ViIjoicmVzZXQtdGVzdC0yMDI2MDgwNV8wMDI1MDJAdGVzdC5jb20iLCJpYXQiOjE3ODU4NTcxMTEsImV4cCI6MTc4NTk0MzUxMX0.5MLF6xSseBDcmpKM67fBArEaHi-zXCaK_72sd8O8SNQ","userCode":"USR
+==========================================================================
+
+==========================================================================
+[PASS]  SEC-14e: Login with OLD password → 401
+  POST http://localhost:8080/api/v1/auth/login
+  Payload: {"email": "reset-test-20260805_002502@test.com", "password": "InitialPass123!"}
+  Expected HTTP [401]  →  Got HTTP 401
+  Response: {"success":false,"message":"Invalid email or password.","data":null,"timestamp":"2026-08-04T15:25:11.574585457"}
+==========================================================================
+  ✅ Throwaway user reset-test-20260805_002502@test.com will be cleaned up on next run.
+
+==========================================================================
+[PASS]  F2-15: USER calls /admin/tickets → 403
+  GET http://localhost:8080/api/v1/admin/tickets
+  Expected HTTP [403]  →  Got HTTP 403
+  Response: {"status":403,"message":"Access denied. Insufficient permissions.","data":null}
+==========================================================================
+
+==========================================================================
+[PASS]  F1-17: Change password with correct oldPassword → 200
+  POST http://localhost:8080/api/v1/user/change-password
+  Payload: {"oldPassword": "InitialPass123!", "newPassword": "NewSecure456!"}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":"Password changed successfully","timestamp":"2026-08-04T15:25:12.633545473"}
+==========================================================================
+
+==========================================================================
+[PASS]  F1-17b: Login with changed password → 200
+  POST http://localhost:8080/api/v1/auth/login
+  Payload: {"email": "chg-pwd-20260805_002502@test.com", "password": "NewSecure456!"}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyQ29kZSI6IlVTUi0wOC0yMDI2LTAwMDAwMDA0IiwiZnVsbE5hbWUiOiJDaGFuZ2UgUHdkIFRlc3QiLCJyb2xlIjoiUk9MRV9VU0VSIiwic3ViIjoiY2hnLXB3ZC0yMDI2MDgwNV8wMDI1MDJAdGVzdC5jb20iLCJpYXQiOjE3ODU4NTcxMTIsImV4cCI6MTc4NTk0MzUxMn0.K-7sWs8CLYiH2_HdMiqye9YYQFflTUCOWxwiQAeP9fk","userCode":"USR-08-
+==========================================================================
+
+==========================================================================
+[PASS]  F1-17c: Change password with wrong oldPassword → 400
+  POST http://localhost:8080/api/v1/user/change-password
+  Payload: {"oldPassword": "WrongOldPass1!", "newPassword": "Xyz789!"}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Current password is incorrect","data":null,"timestamp":"2026-08-04T15:25:13.155985577"}
+==========================================================================
+
+==========================================================================
+[PASS]  F1-16: Change to blocklisted password 'matkhau123' → 400
+  POST http://localhost:8080/api/v1/user/change-password
+  Payload: {"oldPassword": "NewSecure456!", "newPassword": "matkhau123"}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"New password does not meet security requirements. It must be 10-64 characters and not contain common words or patterns.","data":null,"timestamp":"2026-08-04T15:25:13.412909734"}
+==========================================================================
+
+██████████████████████████████████████████████████████████████████████████
+  SECTION 1b: TICKET BACKEND VALIDATION (F02 — curl bypasses UI)
+██████████████████████████████████████████████████████████████████████████
+
+==========================================================================
+[PASS]  F02-02: Create ticket missing prizes → 400
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2025-01-01", "status": "UNPUBLISH", "prizes": null}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"JSON parse error: Cannot construct instance of `com.lottery.checker.dto.request.CreateTicketRequest`, problem: Cannot invoke \"java.util.Collection.isEmpty()\" because \"<parameter1>\" is null","data":null,"timestamp":"2026-08-04T15:25:13.445866466"}
+==========================================================================
+
+==========================================================================
+[PASS]  F02-02b: Create ticket empty prizes list → 400
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2025-01-01", "status": "UNPUBLISH", "prizes": []}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Prize details are required","data":null,"timestamp":"2026-08-04T15:25:13.512089704"}
+==========================================================================
+
+==========================================================================
+[PASS]  F02-05: Non-numeric prize 'ABC' → 400
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2025-01-02", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "ABCDEF", "rewardAmount": 2000000000}]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Winning numbers must contain digits only. Invalid value: ABCDEF","data":null,"timestamp":"2026-08-04T15:25:13.539457644"}
+==========================================================================
+
+==========================================================================
+[PASS]  F02-06: Duplicate within same type (G6: '1234,1234') → 409
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2025-01-03", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "999999", "rewardAmount": 2000000000}, {"type": "G6", "winningNumbers": "1234,1234", "rewardAmount": 400000}
+  Expected HTTP [409]  →  Got HTTP 409
+  Response: {"success":false,"message":"Duplicate winning number detected for prize G6: 1234","data":null,"timestamp":"2026-08-04T15:25:13.556433725"}
+==========================================================================
+
+==========================================================================
+[PASS]  F02-X: Cross-type duplicate (G1=G2='88888') → ALLOWED
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2025-01-04", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "999999", "rewardAmount": 2000000000}, {"type": "G1", "winningNumbers": "88888", "rewardAmount": 30000000}, 
+  Expected HTTP [200, 201]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"id":16,"resultCode":"RES-HCM-04012025","stationName":"TP. Hồ Chí Minh","drawDate":"2025-01-04","status":"UNPUBLISH","totalQueries":0,"prizes":[{"type":"G_DB","winningNumber":"999999","rewardAmount":2000000000},{"type":"G1","winningNumber":"88888","rewardAmount":30000000},{"type":"G2","winningNumber":"888
+==========================================================================
+
+==========================================================================
+[PASS]  F02-LEN: G_DB with 5 digits → 400
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2025-01-05", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "12345", "rewardAmount": 2000000000}]}
+  Expected HTTP [400]  →  Got HTTP 400
+  Response: {"success":false,"message":"Prize G_DB requires 6-digit numbers. Invalid value: 12345","data":null,"timestamp":"2026-08-04T15:25:13.625758042"}
+==========================================================================
+
+==========================================================================
+[PASS]  F02-07: Edit F02-X ticket: change ONLY G8 (22→23) → 200, no 409
+  PUT http://localhost:8080/api/v1/admin/tickets/16
+  Payload: {"stationId": 1, "drawDate": "2025-01-04", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "999999", "rewardAmount": 2000000000}, {"type": "G1", "winningNumbers": "88888", "rewardAmount": 30000000}, 
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"id":16,"resultCode":"RES-HCM-04012025","stationName":"TP. Hồ Chí Minh","drawDate":"2025-01-04","status":"UNPUBLISH","totalQueries":0,"prizes":[{"type":"G_DB","winningNumber":"999999","rewardAmount":2000000000},{"type":"G1","winningNumber":"88888","rewardAmount":30000000},{"type":"G2","winningNumber":"888
+==========================================================================
+
+==========================================================================
+[PASS]  F02-08: PUT with status=PUBLISH → response must show PUBLISH
+  PUT http://localhost:8080/api/v1/admin/tickets/16
+  Payload: {"stationId": 1, "drawDate": "2025-01-04", "status": "PUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "999999", "rewardAmount": 2000000000}, {"type": "G1", "winningNumbers": "88888", "rewardAmount": 30000000}, {"
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"id":16,"resultCode":"RES-HCM-04012025","stationName":"TP. Hồ Chí Minh","drawDate":"2025-01-04","status":"PUBLISH","totalQueries":0,"prizes":[{"type":"G_DB","winningNumber":"999999","rewardAmount":2000000000},{"type":"G1","winningNumber":"88888","rewardAmount":30000000},{"type":"G2","winningNumber":"88888
+==========================================================================
+
+==========================================================================
+[PASS]  F02-09: PUT with status=UNPUBLISH → response must show UNPUBLISH
+  PUT http://localhost:8080/api/v1/admin/tickets/16
+  Payload: {"stationId": 1, "drawDate": "2025-01-04", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "999999", "rewardAmount": 2000000000}, {"type": "G1", "winningNumbers": "88888", "rewardAmount": 30000000}, 
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"id":16,"resultCode":"RES-HCM-04012025","stationName":"TP. Hồ Chí Minh","drawDate":"2025-01-04","status":"UNPUBLISH","totalQueries":0,"prizes":[{"type":"G_DB","winningNumber":"999999","rewardAmount":2000000000},{"type":"G1","winningNumber":"88888","rewardAmount":30000000},{"type":"G2","winningNumber":"888
+==========================================================================
+
+██████████████████████████████████████████████████████████████████████████
+  SECTION 1c: CHECKER — NO-RESULT EDGE CASE
+██████████████████████████████████████████████████████████████████████████
+
+==========================================================================
+[PASS]  F3-10: Check a date with no result → 404
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2001-01-01", "numbers": ["123456"]}
+  Expected HTTP [404]  →  Got HTTP 404
+  Response: {"success":false,"message":"No published results found for this date.","data":null,"timestamp":"2026-08-04T15:25:13.809185081"}
+==========================================================================
+
+██████████████████████████████████████████████████████████████████████████
+  SECTION 2: E2E FLOW
+  Admin create → Publish → Guest check → User check → History
+  station_id=1 (HCM), draw_date=2026-08-04
+██████████████████████████████████████████████████████████████████████████
+
+[E2E-00] Login as admin via API (real token, not crafted)…
+  ✅ Admin login OK  →  eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyQ29kZSI6IlVTUi0xMC0yM…
+
+==========================================================================
+[PASS]  E2E-01: Admin creates result (HCM 2026-08-04)
+  POST http://localhost:8080/api/v1/admin/tickets
+  Payload: {"stationId": 1, "drawDate": "2026-08-04", "status": "UNPUBLISH", "prizes": [{"type": "G_DB", "winningNumbers": "999999", "rewardAmount": 2000000000}, {"type": "G1", "winningNumbers": "88888", "rewardAmount": 30000000}, 
+  Expected HTTP [200, 201]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"id":17,"resultCode":"RES-HCM-04082026","stationName":"TP. Hồ Chí Minh","drawDate":"2026-08-04","status":"UNPUBLISH","totalQueries":0,"prizes":[{"type":"G_DB","winningNumber":"999999","rewardAmount":2000000000},{"type":"G1","winningNumber":"88888","rewardAmount":30000000},{"type":"G2","winningNumber":"777
+==========================================================================
+
+  → result_id = 17
+
+==========================================================================
+[PASS]  E2E-02: Admin publishes result
+  PATCH http://localhost:8080/api/v1/admin/tickets/17/status
+  Payload: {"status": "PUBLISH"}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":"Status updated successfully","timestamp":"2026-08-04T15:25:14.152601763"}
+==========================================================================
+
+==========================================================================
+[PASS]  E2E-03: Guest checks 999999 → wins G_DB
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2026-08-04", "numbers": ["999999"]}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"summary":{"totalSpent":10000,"totalWon":2000000000},"details":[{"number":"999999","isWon":true,"prize":"G_DB","amount":2000000000}]},"timestamp":"2026-08-04T15:25:14.179615971"}
+==========================================================================
+
+==========================================================================
+[PASS]  E2E-04: User checks 3 tickets (999999 + 111111 + 222222)
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2026-08-04", "numbers": ["999999", "111111", "222222"]}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"summary":{"totalSpent":30000,"totalWon":2000000000},"details":[{"number":"999999","isWon":true,"prize":"G_DB","amount":2000000000},{"number":"111111","isWon":false,"prize":"None","amount":0},{"number":"222222","isWon":false,"prize":"None","amount":0}]},"timestamp":"2026-08-04T15:25:14.217623179"}
+==========================================================================
+
+==========================================================================
+[PASS]  E2E-05: User views check history
+  GET http://localhost:8080/api/v1/checker/history
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":[{"id":19,"date":"2026-08-04T15:25:14","totalSpent":30000,"totalWon":2000000000,"tickets":[{"number":"999999","isWon":true,"prize":"G_DB","amount":2000000000,"station":"TP. Hồ Chí Minh","drawDate":"2026-08-04","checkTime":"2026-08-04T15:25:14"},{"number":"111111","isWon":false,"prize":"No Prize","amount":0
+==========================================================================
+
+[PASS]  E2E-07: Analytics aggregation (totalSpent=30000, totalWon=2000000000)
+
+==========================================================================
+[PASS]  E2E-06: Admin lists tickets (total_queries check)
+  GET http://localhost:8080/api/v1/admin/tickets?page=0&size=50
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"content":[{"id":17,"resultCode":"RES-HCM-04082026","stationName":"TP. Hồ Chí Minh","drawDate":"2026-08-04","status":"PUBLISH","totalQueries":2,"prizes":[{"type":"G_DB","winningNumber":"999999","rewardAmount":2000000000},{"type":"G1","winningNumber":"88888","rewardAmount":30000000},{"type":"G2","winningNu
+==========================================================================
+
+[PASS]  E2E-08: DB total_queries = 2 (1 guest + 1 user session)
+  [DB] check_histories rows for result 17: 4
+
+██████████████████████████████████████████████████████████████████████████
+  SECTION 2b: DB ASSERTIONS — USER + GUEST SESSION ROWS
+██████████████████████████████████████████████████████████████████████████
+
+==========================================================================
+[PASS]  F3-16: User (khach2) checks '111111' → verify DB session+history
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["111111"]}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"summary":{"totalSpent":10000,"totalWon":3000000},"details":[{"number":"111111","isWon":true,"prize":"G4","amount":3000000}]},"timestamp":"2026-08-04T15:25:14.963705442"}
+==========================================================================
+  [DB-ASSERT] F3-16: user_id=4, ticket=111111  ✓
+
+==========================================================================
+[PASS]  F3-17: Guest checks '222222' → verify DB session.user_id=NULL
+  POST http://localhost:8080/api/v1/checker/check
+  Payload: {"stationId": 1, "date": "2023-10-23", "numbers": ["222222"]}
+  Expected HTTP [200]  →  Got HTTP 200
+  Response: {"success":true,"message":"Success","data":{"summary":{"totalSpent":10000,"totalWon":3000000},"details":[{"number":"222222","isWon":true,"prize":"G4","amount":3000000}]},"timestamp":"2026-08-04T15:25:15.110272344"}
+==========================================================================
+  [DB-ASSERT] F3-17: user_id=NULL, ticket=222222  ✓
+  ✅ F3-16/F3-17 cleanup done (removed test rows for 111111, 222222).
+
+==========================================================================
+  SUMMARY
+==========================================================================
+  Total tests : 55
+  Passed      : 55
+  Failed      : 0
+  Pass rate   : 100.0%
+
+  Log  → C:\Users\Kohaku\Downloads\LAB301\Task 5-8\artifacts\test_run_20260805_002502.txt
+  JSON → C:\Users\Kohaku\Downloads\LAB301\Task 5-8\artifacts\test_results_20260805_002502.json
+==========================================================================

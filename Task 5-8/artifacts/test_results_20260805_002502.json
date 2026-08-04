@@ -1,0 +1,546 @@
+[
+  {
+    "id": "F1-20",
+    "desc": "No token → 401",
+    "passed": true,
+    "expected": [
+      401
+    ],
+    "actual": 401,
+    "body": "{\"status\":401,\"message\":\"Authentication required. Please login.\",\"data\":null}"
+  },
+  {
+    "id": "SEC-01",
+    "desc": "Expired JWT → 401",
+    "passed": true,
+    "expected": [
+      401
+    ],
+    "actual": 401,
+    "body": "{\"status\":401,\"message\":\"Authentication required. Please login.\",\"data\":null}"
+  },
+  {
+    "id": "SEC-02",
+    "desc": "Locked user + valid-signature JWT → 401",
+    "passed": true,
+    "expected": [
+      401
+    ],
+    "actual": 401,
+    "body": "{\"status\":401,\"message\":\"Authentication required. Please login.\",\"data\":null}"
+  },
+  {
+    "id": "F1-23",
+    "desc": "USER calls /admin/users → 403",
+    "passed": true,
+    "expected": [
+      403
+    ],
+    "actual": 403,
+    "body": "{\"status\":403,\"message\":\"Access denied. Insufficient permissions.\",\"data\":null}"
+  },
+  {
+    "id": "SEC-03a",
+    "desc": "Empty login body → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"password: Password is required, email: Email is required\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.767278202\"}"
+  },
+  {
+    "id": "SEC-03b",
+    "desc": "Null numbers in checker → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"JSON parse error: Cannot construct instance of `com.lottery.checker.dto.request.CheckTicketsRequest`, problem: Cannot invoke \\\"java.util.Collection.isEmpty()\\\" because \\\"<parameter1>\\\" is null\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.791199819\"}"
+  },
+  {
+    "id": "SEC-03c",
+    "desc": "Completely empty body → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Required request body is missing: public org.springframework.http.ResponseEntity<com.lottery.checker.dto.response.ApiResponse<com.lottery.checker.dto.response.CheckTicketResponse>> com.lottery.checker.controller.CheckerController.checkTickets(com.lottery.checker.dto.request.CheckTicketsRequest,org.springframework.security.core.Authentication)\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.802364681\"}"
+  },
+  {
+    "id": "SEC-09",
+    "desc": "Malformed JSON → clean 400, no stack trace",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"JSON parse error: Unexpected character ('t' (code 116)): was expecting double-quote to start property name\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.81318745\"}"
+  },
+  {
+    "id": "SEC-04",
+    "desc": ">50 tickets → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"numbers: Maximum 50 tickets per check\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.828029899\"}"
+  },
+  {
+    "id": "SEC-05",
+    "desc": "Future date → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Draw date cannot be in the future.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.838655784\"}"
+  },
+  {
+    "id": "SEC-06a",
+    "desc": "Non-numeric ticket 'ABC123' → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"numbers[0]: Invalid ticket number format. Must be exactly 6 digits\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.863572948\"}"
+  },
+  {
+    "id": "SEC-06b",
+    "desc": "5-digit ticket '12345' → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"numbers[0]: Invalid ticket number format. Must be exactly 6 digits\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.894069342\"}"
+  },
+  {
+    "id": "SEC-06c",
+    "desc": "Missing stationId → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"stationId: Station ID is required\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.924924693\"}"
+  },
+  {
+    "id": "F3-03",
+    "desc": "Guest sends 2 tickets → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Guests can only check one ticket at a time. Please login to check multiple tickets.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.957340479\"}"
+  },
+  {
+    "id": "F3-13",
+    "desc": "Duplicate number in one request → 409",
+    "passed": true,
+    "expected": [
+      409
+    ],
+    "actual": 409,
+    "body": "{\"success\":false,\"message\":\"Duplicate ticket number in request: \\\"111222\\\". Each ticket can only appear once.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.974296723\"}"
+  },
+  {
+    "id": "F3-14",
+    "desc": "Already-checked ticket (khach1+123485) → 409",
+    "passed": true,
+    "expected": [
+      409
+    ],
+    "actual": 409,
+    "body": "{\"success\":false,\"message\":\"You have already checked ticket(s): 123485 for this draw. Each ticket can only be checked once.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:04.998085251\"}"
+  },
+  {
+    "id": "SEC-07",
+    "desc": "SQL injection in admin search → safe 200",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"content\":[],\"last\":true,\"page\":0,\"size\":20,\"totalElements\":0,\"totalPages\":0},\"timestamp\":\"2026-08-04T15:25:05.045402519\"}"
+  },
+  {
+    "id": "SEC-08",
+    "desc": "XSS in fullName → stored as text, no execution",
+    "passed": true,
+    "expected": [
+      200,
+      201
+    ],
+    "actual": 201,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":\"User registered successfully\",\"timestamp\":\"2026-08-04T15:25:05.36419104\"}"
+  },
+  {
+    "id": "SEC-11",
+    "desc": "No 'password' key in /user/me response",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"id\":4,\"userCode\":\"USR-10-2023-00000004\",\"email\":\"khach2@gmail.com\",\"phone\":\"0910000002\",\"fullName\":\"Trần Thị Chín\",\"role\":\"ROLE_USER\",\"isActive\":true,\"lastLogin\":\"2026-08-01T15:21:08\",\"createdAt\":\"2026-08-04T15:21:08\"},\"timestamp\":\"2026-08-04T15:25:05.519847718\"}"
+  },
+  {
+    "id": "SEC-12",
+    "desc": "BCrypt hash in DB",
+    "passed": true,
+    "expected": "$2a$ prefix",
+    "actual": "$2a$12$Jf6a0eHS/vrrMvw3Psy.nO",
+    "body": ""
+  },
+  {
+    "id": "SEC-10",
+    "desc": "Concurrent registration race",
+    "passed": true,
+    "expected": "no 500, ≥1 success, rest 409",
+    "actual": "[('race1-20260805_002502@test.com', 201), ('race2-20260805_002502@test.com', 409), ('race3-20260805_002502@test.com', 409), ('race4-20260805_002502@test.com', 409), ('race5-20260805_002502@test.com', 409)]",
+    "body": ""
+  },
+  {
+    "id": "SEC-14a",
+    "desc": "Register throwaway user for reset flow",
+    "passed": true,
+    "expected": [
+      200,
+      201
+    ],
+    "actual": 201,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":\"User registered successfully\",\"timestamp\":\"2026-08-04T15:25:06.322156151\"}"
+  },
+  {
+    "id": "SEC-14b",
+    "desc": "Forgot password for existing email → 200 generic",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":\"If the email exists, a reset link has been sent.\",\"timestamp\":\"2026-08-04T15:25:10.631969866\"}"
+  },
+  {
+    "id": "SEC-14c",
+    "desc": "Validate fresh token → 200",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"valid\":true},\"timestamp\":\"2026-08-04T15:25:10.774877926\"}"
+  },
+  {
+    "id": "F1-14",
+    "desc": "Reset password with valid token → 200",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":\"Password has been reset successfully.\",\"timestamp\":\"2026-08-04T15:25:11.044663028\"}"
+  },
+  {
+    "id": "F1-15",
+    "desc": "Reuse consumed token → 409",
+    "passed": true,
+    "expected": [
+      409
+    ],
+    "actual": 409,
+    "body": "{\"success\":false,\"message\":\"This reset link has already been used\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:11.057997675\"}"
+  },
+  {
+    "id": "SEC-14d",
+    "desc": "Login with reset password → 200",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"token\":\"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyQ29kZSI6IlVTUi0wOC0yMDI2LTAwMDAwMDAzIiwiZnVsbE5hbWUiOiJSZXNldCBUZXN0IFVzZXIiLCJyb2xlIjoiUk9MRV9VU0VSIiwic3ViIjoicmVzZXQtdGVzdC0yMDI2MDgwNV8wMDI1MDJAdGVzdC5jb20iLCJpYXQiOjE3ODU4NTcxMTEsImV4cCI6MTc4NTk0MzUxMX0.5MLF6xSseBDcmpKM67fBArEaHi-zXCaK_72sd8O8SNQ\",\"userCode\":\"USR-08-2026-00000003\",\"fullName\":\"Reset Test User\",\"role\":\"ROLE_USER\"},\"timestamp\":\"2026-08-04T15:25:11.323867541\"}"
+  },
+  {
+    "id": "SEC-14e",
+    "desc": "Login with OLD password → 401",
+    "passed": true,
+    "expected": [
+      401
+    ],
+    "actual": 401,
+    "body": "{\"success\":false,\"message\":\"Invalid email or password.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:11.574585457\"}"
+  },
+  {
+    "id": "F2-15",
+    "desc": "USER calls /admin/tickets → 403",
+    "passed": true,
+    "expected": [
+      403
+    ],
+    "actual": 403,
+    "body": "{\"status\":403,\"message\":\"Access denied. Insufficient permissions.\",\"data\":null}"
+  },
+  {
+    "id": "F1-17",
+    "desc": "Change password with correct oldPassword → 200",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":\"Password changed successfully\",\"timestamp\":\"2026-08-04T15:25:12.633545473\"}"
+  },
+  {
+    "id": "F1-17b",
+    "desc": "Login with changed password → 200",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"token\":\"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyQ29kZSI6IlVTUi0wOC0yMDI2LTAwMDAwMDA0IiwiZnVsbE5hbWUiOiJDaGFuZ2UgUHdkIFRlc3QiLCJyb2xlIjoiUk9MRV9VU0VSIiwic3ViIjoiY2hnLXB3ZC0yMDI2MDgwNV8wMDI1MDJAdGVzdC5jb20iLCJpYXQiOjE3ODU4NTcxMTIsImV4cCI6MTc4NTk0MzUxMn0.K-7sWs8CLYiH2_HdMiqye9YYQFflTUCOWxwiQAeP9fk\",\"userCode\":\"USR-08-2026-00000004\",\"fullName\":\"Change Pwd Test\",\"role\":\"ROLE_USER\"},\"timestamp\":\"2026-08-04T15:25:12.895309108\"}"
+  },
+  {
+    "id": "F1-17c",
+    "desc": "Change password with wrong oldPassword → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Current password is incorrect\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.155985577\"}"
+  },
+  {
+    "id": "F1-16",
+    "desc": "Change to blocklisted password 'matkhau123' → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"New password does not meet security requirements. It must be 10-64 characters and not contain common words or patterns.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.412909734\"}"
+  },
+  {
+    "id": "F02-02",
+    "desc": "Create ticket missing prizes → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"JSON parse error: Cannot construct instance of `com.lottery.checker.dto.request.CreateTicketRequest`, problem: Cannot invoke \\\"java.util.Collection.isEmpty()\\\" because \\\"<parameter1>\\\" is null\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.445866466\"}"
+  },
+  {
+    "id": "F02-02b",
+    "desc": "Create ticket empty prizes list → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Prize details are required\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.512089704\"}"
+  },
+  {
+    "id": "F02-05",
+    "desc": "Non-numeric prize 'ABC' → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Winning numbers must contain digits only. Invalid value: ABCDEF\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.539457644\"}"
+  },
+  {
+    "id": "F02-06",
+    "desc": "Duplicate within same type (G6: '1234,1234') → 409",
+    "passed": true,
+    "expected": [
+      409
+    ],
+    "actual": 409,
+    "body": "{\"success\":false,\"message\":\"Duplicate winning number detected for prize G6: 1234\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.556433725\"}"
+  },
+  {
+    "id": "F02-X",
+    "desc": "Cross-type duplicate (G1=G2='88888') → ALLOWED",
+    "passed": true,
+    "expected": [
+      200,
+      201
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"id\":16,\"resultCode\":\"RES-HCM-04012025\",\"stationName\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2025-01-04\",\"status\":\"UNPUBLISH\",\"totalQueries\":0,\"prizes\":[{\"type\":\"G_DB\",\"winningNumber\":\"999999\",\"rewardAmount\":2000000000},{\"type\":\"G1\",\"winningNumber\":\"88888\",\"rewardAmount\":30000000},{\"type\":\"G2\",\"winningNumber\":\"88888\",\"rewardAmount\":15000000},{\"type\":\"G3\",\"winningNumber\":\"77777\",\"rewardAmount\":10000000},{\"type\":\"G4\",\"winningNumber\":\"66666\",\"rewardAmount\":3000000},{\"type\":\"G5\",\"winningNumber\":\"5555\",\"rewardAmount\":1000000},{\"type\":\"G6\",\"winningNumber\":\"4444\",\"r"
+  },
+  {
+    "id": "F02-LEN",
+    "desc": "G_DB with 5 digits → 400",
+    "passed": true,
+    "expected": [
+      400
+    ],
+    "actual": 400,
+    "body": "{\"success\":false,\"message\":\"Prize G_DB requires 6-digit numbers. Invalid value: 12345\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.625758042\"}"
+  },
+  {
+    "id": "F02-07",
+    "desc": "Edit F02-X ticket: change ONLY G8 (22→23) → 200, no 409",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"id\":16,\"resultCode\":\"RES-HCM-04012025\",\"stationName\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2025-01-04\",\"status\":\"UNPUBLISH\",\"totalQueries\":0,\"prizes\":[{\"type\":\"G_DB\",\"winningNumber\":\"999999\",\"rewardAmount\":2000000000},{\"type\":\"G1\",\"winningNumber\":\"88888\",\"rewardAmount\":30000000},{\"type\":\"G2\",\"winningNumber\":\"88888\",\"rewardAmount\":15000000},{\"type\":\"G3\",\"winningNumber\":\"77777\",\"rewardAmount\":10000000},{\"type\":\"G4\",\"winningNumber\":\"66666\",\"rewardAmount\":3000000},{\"type\":\"G5\",\"winningNumber\":\"5555\",\"rewardAmount\":1000000},{\"type\":\"G6\",\"winningNumber\":\"4444\",\"r"
+  },
+  {
+    "id": "F02-08",
+    "desc": "PUT with status=PUBLISH → response must show PUBLISH",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"id\":16,\"resultCode\":\"RES-HCM-04012025\",\"stationName\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2025-01-04\",\"status\":\"PUBLISH\",\"totalQueries\":0,\"prizes\":[{\"type\":\"G_DB\",\"winningNumber\":\"999999\",\"rewardAmount\":2000000000},{\"type\":\"G1\",\"winningNumber\":\"88888\",\"rewardAmount\":30000000},{\"type\":\"G2\",\"winningNumber\":\"88888\",\"rewardAmount\":15000000},{\"type\":\"G3\",\"winningNumber\":\"77777\",\"rewardAmount\":10000000},{\"type\":\"G4\",\"winningNumber\":\"66666\",\"rewardAmount\":3000000},{\"type\":\"G5\",\"winningNumber\":\"5555\",\"rewardAmount\":1000000},{\"type\":\"G6\",\"winningNumber\":\"4444\",\"rew"
+  },
+  {
+    "id": "F02-09",
+    "desc": "PUT with status=UNPUBLISH → response must show UNPUBLISH",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"id\":16,\"resultCode\":\"RES-HCM-04012025\",\"stationName\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2025-01-04\",\"status\":\"UNPUBLISH\",\"totalQueries\":0,\"prizes\":[{\"type\":\"G_DB\",\"winningNumber\":\"999999\",\"rewardAmount\":2000000000},{\"type\":\"G1\",\"winningNumber\":\"88888\",\"rewardAmount\":30000000},{\"type\":\"G2\",\"winningNumber\":\"88888\",\"rewardAmount\":15000000},{\"type\":\"G3\",\"winningNumber\":\"77777\",\"rewardAmount\":10000000},{\"type\":\"G4\",\"winningNumber\":\"66666\",\"rewardAmount\":3000000},{\"type\":\"G5\",\"winningNumber\":\"5555\",\"rewardAmount\":1000000},{\"type\":\"G6\",\"winningNumber\":\"4444\",\"r"
+  },
+  {
+    "id": "F3-10",
+    "desc": "Check a date with no result → 404",
+    "passed": true,
+    "expected": [
+      404
+    ],
+    "actual": 404,
+    "body": "{\"success\":false,\"message\":\"No published results found for this date.\",\"data\":null,\"timestamp\":\"2026-08-04T15:25:13.809185081\"}"
+  },
+  {
+    "id": "E2E-01",
+    "desc": "Admin creates result (HCM 2026-08-04)",
+    "passed": true,
+    "expected": [
+      200,
+      201
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"id\":17,\"resultCode\":\"RES-HCM-04082026\",\"stationName\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2026-08-04\",\"status\":\"UNPUBLISH\",\"totalQueries\":0,\"prizes\":[{\"type\":\"G_DB\",\"winningNumber\":\"999999\",\"rewardAmount\":2000000000},{\"type\":\"G1\",\"winningNumber\":\"88888\",\"rewardAmount\":30000000},{\"type\":\"G2\",\"winningNumber\":\"77777\",\"rewardAmount\":15000000},{\"type\":\"G3\",\"winningNumber\":\"66666\",\"rewardAmount\":10000000},{\"type\":\"G4\",\"winningNumber\":\"55555\",\"rewardAmount\":3000000},{\"type\":\"G5\",\"winningNumber\":\"4444\",\"rewardAmount\":1000000},{\"type\":\"G6\",\"winningNumber\":\"3210\",\"r"
+  },
+  {
+    "id": "E2E-02",
+    "desc": "Admin publishes result",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":\"Status updated successfully\",\"timestamp\":\"2026-08-04T15:25:14.152601763\"}"
+  },
+  {
+    "id": "E2E-03",
+    "desc": "Guest checks 999999 → wins G_DB",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"summary\":{\"totalSpent\":10000,\"totalWon\":2000000000},\"details\":[{\"number\":\"999999\",\"isWon\":true,\"prize\":\"G_DB\",\"amount\":2000000000}]},\"timestamp\":\"2026-08-04T15:25:14.179615971\"}"
+  },
+  {
+    "id": "E2E-04",
+    "desc": "User checks 3 tickets (999999 + 111111 + 222222)",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"summary\":{\"totalSpent\":30000,\"totalWon\":2000000000},\"details\":[{\"number\":\"999999\",\"isWon\":true,\"prize\":\"G_DB\",\"amount\":2000000000},{\"number\":\"111111\",\"isWon\":false,\"prize\":\"None\",\"amount\":0},{\"number\":\"222222\",\"isWon\":false,\"prize\":\"None\",\"amount\":0}]},\"timestamp\":\"2026-08-04T15:25:14.217623179\"}"
+  },
+  {
+    "id": "E2E-05",
+    "desc": "User views check history",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":[{\"id\":19,\"date\":\"2026-08-04T15:25:14\",\"totalSpent\":30000,\"totalWon\":2000000000,\"tickets\":[{\"number\":\"999999\",\"isWon\":true,\"prize\":\"G_DB\",\"amount\":2000000000,\"station\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2026-08-04\",\"checkTime\":\"2026-08-04T15:25:14\"},{\"number\":\"111111\",\"isWon\":false,\"prize\":\"No Prize\",\"amount\":0,\"station\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2026-08-04\",\"checkTime\":\"2026-08-04T15:25:14\"},{\"number\":\"222222\",\"isWon\":false,\"prize\":\"No Prize\",\"amount\":0,\"station\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2026-08-04\",\"checkTime\":\"2026-08-04T15:25:14\"}]},{\"id\":2,\"d"
+  },
+  {
+    "id": "E2E-07",
+    "desc": "Analytics aggregation consistent",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "totalSpent=30000 totalWon=2000000000"
+  },
+  {
+    "id": "E2E-06",
+    "desc": "Admin lists tickets (total_queries check)",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"content\":[{\"id\":17,\"resultCode\":\"RES-HCM-04082026\",\"stationName\":\"TP. Hồ Chí Minh\",\"drawDate\":\"2026-08-04\",\"status\":\"PUBLISH\",\"totalQueries\":2,\"prizes\":[{\"type\":\"G_DB\",\"winningNumber\":\"999999\",\"rewardAmount\":2000000000},{\"type\":\"G1\",\"winningNumber\":\"88888\",\"rewardAmount\":30000000},{\"type\":\"G2\",\"winningNumber\":\"77777\",\"rewardAmount\":15000000},{\"type\":\"G3\",\"winningNumber\":\"66666\",\"rewardAmount\":10000000},{\"type\":\"G4\",\"winningNumber\":\"55555\",\"rewardAmount\":3000000},{\"type\":\"G5\",\"winningNumber\":\"4444\",\"rewardAmount\":1000000},{\"type\":\"G6\",\"winningNumber\""
+  },
+  {
+    "id": "E2E-08",
+    "desc": "DB total_queries = 2",
+    "passed": true,
+    "expected": "2",
+    "actual": "2",
+    "body": ""
+  },
+  {
+    "id": "F3-16",
+    "desc": "User (khach2) checks '111111' → verify DB session+history",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"summary\":{\"totalSpent\":10000,\"totalWon\":3000000},\"details\":[{\"number\":\"111111\",\"isWon\":true,\"prize\":\"G4\",\"amount\":3000000}]},\"timestamp\":\"2026-08-04T15:25:14.963705442\"}"
+  },
+  {
+    "id": "F3-16",
+    "desc": "DB assertion user session",
+    "passed": true,
+    "expected": "session.user_id NOT NULL + history row",
+    "actual": "user_id=4, ticket=111111",
+    "body": ""
+  },
+  {
+    "id": "F3-17",
+    "desc": "Guest checks '222222' → verify DB session.user_id=NULL",
+    "passed": true,
+    "expected": [
+      200
+    ],
+    "actual": 200,
+    "body": "{\"success\":true,\"message\":\"Success\",\"data\":{\"summary\":{\"totalSpent\":10000,\"totalWon\":3000000},\"details\":[{\"number\":\"222222\",\"isWon\":true,\"prize\":\"G4\",\"amount\":3000000}]},\"timestamp\":\"2026-08-04T15:25:15.110272344\"}"
+  },
+  {
+    "id": "F3-17",
+    "desc": "DB assertion guest session",
+    "passed": true,
+    "expected": "session.user_id=NULL + history row",
+    "actual": "user_id=NULL, ticket=222222",
+    "body": ""
+  }
+]
