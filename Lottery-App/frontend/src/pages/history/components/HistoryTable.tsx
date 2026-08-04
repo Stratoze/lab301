@@ -18,7 +18,7 @@ interface HistoryTableProps {
 const HistoryTable: React.FC<HistoryTableProps> = ({ data }) => {
   return (
     <Table
-      pagination={{ pageSize: 5 }}
+      pagination={{ pageSize: 10 }}
       dataSource={data}
       columns={[
         { title: 'Date', dataIndex: 'date' },
