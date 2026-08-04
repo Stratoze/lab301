@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AddTicketModal, { Props } from '../components/AddTicketModal';
+import AddTicketModal, { type Props } from '../components/AddTicketModal';
 import apiClient from '../../../api/apiClient';
 
 vi.mock('../../../api/apiClient', () => ({

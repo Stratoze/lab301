@@ -26,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -108,6 +110,7 @@ public class TicketServiceImpl implements TicketService {
         result.setStation(station);
         result.setDrawDate(request.drawDate());
         result.setResultCode(generateResultCode(station, request.drawDate()));
+        result.setStatus(status);
 
         applyAuditAndPrizes(result, request.prizes(), status, adminEmail);
 
@@ -173,23 +176,46 @@ public class TicketServiceImpl implements TicketService {
             result.setPublishedAt(LocalDateTime.now());
         }
 
-        result.getPrizeDetails().clear();
-
+        // Flatten the incoming request into an ordered type:number -> amount map.
+        LinkedHashMap<String, Long> wanted = new LinkedHashMap<>();
         for (PrizeRequest prizeReq : prizes) {
-            String[] numbers = prizeReq.winningNumbers().split("[,\\s]+");
-
-            for (String num : numbers) {
+            String type = prizeReq.type().trim().toUpperCase();
+            for (String num : prizeReq.winningNumbers().split("[,\\s]+")) {
                 String cleaned = num.trim();
-
                 if (!cleaned.isBlank()) {
-                    result.addPrizeDetail(
-                            PrizeDetail.builder()
-                                    .prizeType(prizeReq.type().toUpperCase())
-                                    .winningNumber(cleaned)
-                                    .rewardAmount(prizeReq.rewardAmount())
-                                    .build()
-                    );
+                    wanted.put(type + ":" + cleaned, prizeReq.rewardAmount());
                 }
+            }
+        }
+
+        // Diff against the current collection instead of clear()+re-add.
+        // Hibernate flushes INSERTs before DELETEs, so clearing then re-adding an
+        // unchanged (result_id, prize_type, winning_number) row violates the
+        // unique_idx_result_prize_number constraint on edit (the 409 "Duplicate
+        // or invalid data" bug). Reusing the managed entity issues a clean UPDATE;
+        // only rows that truly vanish are orphan-removed.
+        Map<String, PrizeDetail> currentByKey = new HashMap<>();
+        for (PrizeDetail detail : result.getPrizeDetails()) {
+            currentByKey.put(detail.getPrizeType() + ":" + detail.getWinningNumber(), detail);
+        }
+
+        Set<String> wantedKeys = new HashSet<>(wanted.keySet());
+        result.getPrizeDetails().removeIf(detail ->
+                !wantedKeys.contains(detail.getPrizeType() + ":" + detail.getWinningNumber()));
+
+        for (Map.Entry<String, Long> entry : wanted.entrySet()) {
+            PrizeDetail existing = currentByKey.get(entry.getKey());
+            if (existing != null) {
+                existing.setRewardAmount(entry.getValue());
+            } else {
+                int sep = entry.getKey().indexOf(':');
+                result.addPrizeDetail(
+                        PrizeDetail.builder()
+                                .prizeType(entry.getKey().substring(0, sep))
+                                .winningNumber(entry.getKey().substring(sep + 1))
+                                .rewardAmount(entry.getValue())
+                                .build()
+                );
             }
         }
     }

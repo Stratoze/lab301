@@ -137,11 +137,13 @@ const AddTicketModal: React.FC<Props> = ({ open, onClose, ticket, stations, onSu
       }
     }
 
-    // Duplicate check across all prizes
-    const allNumbers = prizes.flatMap(p => p.winningNumbers.split(',').filter((n: string) => n.trim()));
-    const uniqueNumbers = new Set(allNumbers);
-    if (allNumbers.length !== uniqueNumbers.size) {
-      return message.error('Duplicate winning numbers detected! Each number must be unique.');
+    // Duplicate check WITHIN same prize type only (cross-type duplicates are valid)
+    for (const p of prizes) {
+      const nums = p.winningNumbers.split(',').filter((n: string) => n.trim());
+      const unique = new Set(nums);
+      if (nums.length !== unique.size) {
+        return message.error(`Duplicate number within ${p.type}. Numbers must be unique within the same prize type.`);
+      }
     }
 
     try {
