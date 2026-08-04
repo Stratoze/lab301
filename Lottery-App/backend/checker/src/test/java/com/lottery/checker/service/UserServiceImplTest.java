@@ -6,6 +6,8 @@ import com.lottery.checker.dto.response.UserResponse;
 import com.lottery.checker.entity.PasswordResetToken;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
 import com.lottery.checker.repository.PasswordResetTokenRepository;
 import com.lottery.checker.repository.UserAuthProviderRepository;
 import com.lottery.checker.repository.UserRepository;
@@ -26,6 +28,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.lottery.checker.dto.request.ChangePasswordRequest;
+import com.lottery.checker.dto.request.LinkSocialAccountRequest;
+import com.lottery.checker.dto.request.UpdateUserRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -160,7 +164,7 @@ class UserServiceImplTest {
                 .thenReturn(Optional.of(testUser));
 
         assertThatThrownBy(() -> userService.register(request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Email already exists");
 
         verify(userRepository, never()).save(any());
@@ -182,7 +186,7 @@ class UserServiceImplTest {
                 .thenReturn(Optional.of(testUser));
 
         assertThatThrownBy(() -> userService.register(request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Phone number already exists");
 
         verify(userRepository, never()).save(any());
@@ -313,7 +317,7 @@ class UserServiceImplTest {
                 .thenReturn(Optional.of(resetTokenEntity));
 
         assertThatThrownBy(() -> userService.resetPassword("used-token", "NewStrongPass1!"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already been used");
 
         verify(passwordEncoder, never()).encode(any());
@@ -335,7 +339,7 @@ class UserServiceImplTest {
                 .thenReturn(Optional.of(resetTokenEntity));
 
         assertThatThrownBy(() -> userService.resetPassword("expired-token", "NewStrongPass1!"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Invalid or expired reset token");
 
         verify(passwordEncoder, never()).encode(any());
@@ -357,5 +361,146 @@ class UserServiceImplTest {
         assertThat(response.getContent()).hasSize(1);
         assertThat(response.getTotalElements()).isEqualTo(1L);
         assertThat(response.getContent().get(0).email()).isEqualTo("khach1@gmail.com");
+    }
+
+    // --- changePassword: social-user first-set path ---
+
+    @Test
+    void changePassword_SocialUserFirstSet_SucceedsWithoutOldPassword() {
+        User socialUser = User.builder()
+                .id(5L).userCode("USR-10-2023-00000005")
+                .email("social@gmail.com").password(null)
+                .fullName("Social User").role(Role.ROLE_USER).isActive(true)
+                .build();
+
+        when(userRepository.findByEmail("social@gmail.com"))
+                .thenReturn(Optional.of(socialUser));
+        when(passwordValidator.isValid(eq("NewStrongPass1!"), any()))
+                .thenReturn(true);
+        when(passwordEncoder.encode("NewStrongPass1!"))
+                .thenReturn("$2a$12$encoded...");
+        when(userRepository.save(any(User.class))).thenReturn(socialUser);
+
+        assertThatCode(() -> userService.changePassword(
+                "social@gmail.com",
+                new ChangePasswordRequest(null, "NewStrongPass1!")
+        )).doesNotThrowAnyException();
+
+        verify(passwordEncoder).encode("NewStrongPass1!");
+        verify(userRepository).save(socialUser);
+    }
+
+    @Test
+    void changePassword_SocialUserSendsOldPassword_ThrowsBadRequest() {
+        User socialUser = User.builder()
+                .id(5L).email("social@gmail.com").password(null)
+                .fullName("Social User").role(Role.ROLE_USER).isActive(true)
+                .build();
+
+        when(userRepository.findByEmail("social@gmail.com"))
+                .thenReturn(Optional.of(socialUser));
+
+        assertThatThrownBy(() -> userService.changePassword(
+                "social@gmail.com",
+                new ChangePasswordRequest("someOldPass", "NewStrongPass1!")
+        ))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Leave current password empty");
+
+        verify(passwordEncoder, never()).encode(any());
+    }
+
+    @Test
+    void changePassword_WrongOldPassword_ThrowsBadRequest() {
+        when(userRepository.findByEmail("khach1@gmail.com"))
+                .thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("wrongOld", testUser.getPassword()))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> userService.changePassword(
+                "khach1@gmail.com",
+                new ChangePasswordRequest("wrongOld", "NewStrongPass1!")
+        ))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Current password is incorrect");
+
+        verify(passwordEncoder, never()).encode(any());
+    }
+
+    // --- updateUser ---
+
+    @Test
+    void updateUser_InvalidRole_ThrowsBadRequest() {
+        when(userRepository.findById(3L)).thenReturn(Optional.of(testUser));
+
+        assertThatThrownBy(() -> userService.updateUser(
+                3L, new UpdateUserRequest(null, null, "INVALID_ROLE", null)
+        ))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid role");
+    }
+
+    @Test
+    void updateUser_NotFound_ThrowsNotFound() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.updateUser(
+                999L, new UpdateUserRequest("Name", null, null, null)
+        ))
+                .isInstanceOf(com.lottery.checker.exception.NotFoundException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    // --- sendBulkEmail validation ---
+
+    @Test
+    void sendBulkEmail_BlankSubject_ThrowsBadRequest() {
+        assertThatThrownBy(() -> userService.sendBulkEmail(List.of(3L), "", "content"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("subject is required");
+
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void sendBulkEmail_BlankContent_ThrowsBadRequest() {
+        assertThatThrownBy(() -> userService.sendBulkEmail(List.of(3L), "Subject", ""))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("content is required");
+
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    // --- linkSocialAccount ---
+
+    @Test
+    void linkSocialAccount_AlreadyLinked_ThrowsConflict() {
+        when(userRepository.findByEmail("khach1@gmail.com"))
+                .thenReturn(Optional.of(testUser));
+        when(userAuthProviderRepository.existsByUserAndProvider(testUser, "GOOGLE"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> userService.linkSocialAccount(
+                "khach1@gmail.com",
+                new LinkSocialAccountRequest("GOOGLE", "some-token")
+        ))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already linked");
+
+        verify(socialAuthService, never()).linkProvider(any(), any(), any());
+    }
+
+    // --- unlinkPhone ---
+
+    @Test
+    void unlinkPhone_SetsPhoneToNull() {
+        when(userRepository.findByEmail("khach1@gmail.com"))
+                .thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        userService.unlinkPhone("khach1@gmail.com");
+
+        assertThat(testUser.getPhone()).isNull();
+        verify(userRepository).save(testUser);
     }
 }

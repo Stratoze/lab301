@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Profile from '../Profile';
@@ -38,7 +38,8 @@ vi.mock('../../../components/DashboardCard', () => ({
   default: ({ title, children }: { title: string; children: React.ReactNode }) => <div><h2>{title}</h2>{children}</div>,
 }));
 
-const baseMockReturn = {
+/** Type-safe factory keeps mock shape in sync with the hook's return type */
+const createMockReturn = (): ReturnType<typeof useProfile> => ({
   user: {
     userCode: 'USR-10-2023-00000003',
     email: 'khach1@gmail.com',
@@ -63,19 +64,17 @@ const baseMockReturn = {
   linkSocial: vi.fn(),
   updatePhone: vi.fn(),
   unlinkPhone: vi.fn(),
-};
+});
 
 describe('Profile', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseProfile.mockReturnValue({ ...baseMockReturn });
+    mockUseProfile.mockReturnValue(createMockReturn());
   });
 
   // 5.10 User info displayed correctly
   it('displays user info: userCode, email, fullName', () => {
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     expect(screen.getByText('USR-10-2023-00000003')).toBeInTheDocument();
     expect(screen.getByText('khach1@gmail.com')).toBeInTheDocument();
@@ -85,14 +84,12 @@ describe('Profile', () => {
   // 5.11 Password modal shows old password field when hasPassword is true
   it('shows current password field when user has a password', () => {
     mockUseProfile.mockReturnValue({
-      ...baseMockReturn,
+      ...createMockReturn(),
       isPassModalOpen: true,
-      linkedAccounts: { ...baseMockReturn.linkedAccounts, hasPassword: true },
+      linkedAccounts: { ...createMockReturn().linkedAccounts, hasPassword: true },
     });
 
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     expect(screen.getByText('Enter Your Current Password')).toBeInTheDocument();
   });
@@ -100,14 +97,12 @@ describe('Profile', () => {
   // 5.12 Password modal hides old password field when no password (social user)
   it('hides current password field when user has no password set', () => {
     mockUseProfile.mockReturnValue({
-      ...baseMockReturn,
+      ...createMockReturn(),
       isPassModalOpen: true,
-      linkedAccounts: { ...baseMockReturn.linkedAccounts, hasPassword: false },
+      linkedAccounts: { ...createMockReturn().linkedAccounts, hasPassword: false },
     });
 
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     expect(screen.queryByText('Enter Your Current Password')).not.toBeInTheDocument();
     // Title changes to "Set a Password"
@@ -119,9 +114,7 @@ describe('Profile', () => {
     const user = userEvent.setup();
     const clipboardSpy = vi.spyOn(navigator.clipboard, 'writeText');
 
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     // Click the first copy button (next to user code) - antd CopyOutlined icon has aria-label="copy"
     const copyButtons = screen.getAllByLabelText('copy');
@@ -136,14 +129,12 @@ describe('Profile', () => {
     const user = userEvent.setup();
     const changePassword = vi.fn().mockResolvedValue(undefined);
     mockUseProfile.mockReturnValue({
-      ...baseMockReturn,
+      ...createMockReturn(),
       isPassModalOpen: true,
       changePassword,
     });
 
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     // Fill old password, new password, confirm
     const oldPw = screen.getByLabelText(/Enter Your Current Password/i);
@@ -167,13 +158,11 @@ describe('Profile', () => {
   it('shows validation error when passwords do not match', async () => {
     const user = userEvent.setup();
     mockUseProfile.mockReturnValue({
-      ...baseMockReturn,
+      ...createMockReturn(),
       isPassModalOpen: true,
     });
 
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     const oldPw = screen.getByLabelText(/Enter Your Current Password/i);
     const newPwFields = screen.getAllByLabelText(/New Password/i);
@@ -197,14 +186,12 @@ describe('Profile', () => {
     const user = userEvent.setup();
     const changePassword = vi.fn().mockRejectedValue(new Error('Current password is incorrect'));
     mockUseProfile.mockReturnValue({
-      ...baseMockReturn,
+      ...createMockReturn(),
       isPassModalOpen: true,
       changePassword,
     });
 
-    act(() => {
-      render(<Profile />);
-    });
+    render(<Profile />);
 
     const oldPw = screen.getByLabelText(/Enter Your Current Password/i);
     const newPwFields = screen.getAllByLabelText(/New Password/i);

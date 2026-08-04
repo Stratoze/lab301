@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AddTicketModal from '../components/AddTicketModal';
+import AddTicketModal, { Props } from '../components/AddTicketModal';
+import apiClient from '../../../api/apiClient';
 
 vi.mock('../../../api/apiClient', () => ({
     default: {
@@ -53,7 +54,7 @@ describe('AddTicketModal', () => {
         vi.clearAllMocks();
     });
 
-    const renderModal = (props: Partial<Parameters<typeof AddTicketModal>[0]> = {}) =>
+    const renderModal = (props: Partial<Props> = {}) =>
         render(
             <AddTicketModal
                 open={true}
@@ -116,7 +117,6 @@ describe('AddTicketModal', () => {
 
     it('closes modal and calls onSuccess after successful save', async () => {
         const user = userEvent.setup();
-        const apiClient = (await import('../../../api/apiClient')).default;
         vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { id: 1 } });
 
         renderModal();
@@ -131,7 +131,6 @@ describe('AddTicketModal', () => {
 
     it('shows error when duplicate station/date is submitted', async () => {
         const user = userEvent.setup();
-        const apiClient = (await import('../../../api/apiClient')).default;
         vi.mocked(apiClient.post).mockRejectedValueOnce({
             response: { data: { message: 'A result already exists for this station and draw date.' } },
         });

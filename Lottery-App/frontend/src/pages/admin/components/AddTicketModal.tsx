@@ -19,7 +19,7 @@ export interface TicketData {
   prizes: Array<{ type: string; winningNumber: string }>;
 }
 
-interface Props {
+export interface Props {
   open: boolean;
   onClose: () => void;
   ticket?: TicketData;

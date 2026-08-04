@@ -9,6 +9,8 @@ import com.lottery.checker.entity.LotteryResult;
 import com.lottery.checker.entity.LotteryStation;
 import com.lottery.checker.entity.Role;
 import com.lottery.checker.entity.User;
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
 import com.lottery.checker.repository.LotteryResultRepository;
 import com.lottery.checker.repository.LotteryStationRepository;
 import com.lottery.checker.repository.UserRepository;
@@ -126,7 +128,7 @@ class TicketServiceImplTest {
         );
 
         assertThatThrownBy(() -> ticketService.createTicket(request, null))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already exists");
 
         verify(resultRepository, never()).save(any());
@@ -146,7 +148,7 @@ class TicketServiceImplTest {
         );
 
         assertThatThrownBy(() -> ticketService.createTicket(request, null))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("2-digit numbers");
 
         verify(resultRepository, never()).save(any());
@@ -166,7 +168,7 @@ class TicketServiceImplTest {
         );
 
         assertThatThrownBy(() -> ticketService.createTicket(request, null))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("digits only");
 
         verify(resultRepository, never()).save(any());
@@ -227,7 +229,7 @@ class TicketServiceImplTest {
         );
 
         assertThatThrownBy(() -> ticketService.updateTicket(1L, request, null))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already exists");
 
         verify(resultRepository, never()).save(any());

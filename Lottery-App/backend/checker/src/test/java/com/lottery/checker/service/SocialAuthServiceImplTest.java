@@ -53,18 +53,13 @@ class SocialAuthServiceImplTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Constructor creates a real RestTemplate internally
         socialAuthService = new SocialAuthServiceImpl(
-                userRepository, authProviderRepository, jwtService, userCodeGenerator
+                userRepository, authProviderRepository, jwtService, userCodeGenerator,
+                "test-google-client-id", "test-fb-app-id", "test-fb-app-secret"
         );
 
-        // Swap the internal RestTemplate with our mock
+        // Swap the internally-created RestTemplate with our mock
         ReflectionTestUtils.setField(socialAuthService, "restTemplate", restTemplate);
-
-        // Set @Value fields that Spring would normally inject
-        ReflectionTestUtils.setField(socialAuthService, "googleClientId", "test-google-client-id");
-        ReflectionTestUtils.setField(socialAuthService, "facebookAppId", "test-fb-app-id");
-        ReflectionTestUtils.setField(socialAuthService, "facebookAppSecret", "test-fb-app-secret");
 
         // Generate RSA keypair for signing fake Google JWTs
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");

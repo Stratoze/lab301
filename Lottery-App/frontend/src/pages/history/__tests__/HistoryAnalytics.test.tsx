@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import HistoryAnalytics from '../HistoryAnalytics';
 
@@ -58,6 +58,16 @@ vi.mock('../../../components/DashboardCard', () => ({
 
 
 
+const originalInnerWidth = window.innerWidth;
+
+/** Type-safe factory keeps mock shape in sync with the hook's return type */
+const createMockReturn = (): ReturnType<typeof useHistoryAnalytics> => ({
+  loading: false,
+  history: [],
+  chartData: [],
+  hasHistory: false,
+});
+
 describe('HistoryAnalytics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,6 +76,14 @@ describe('HistoryAnalytics', () => {
       writable: true,
       configurable: true,
       value: 1024,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: originalInnerWidth,
     });
   });
 
@@ -79,7 +97,7 @@ describe('HistoryAnalytics', () => {
   // 5.14 History table displays rows with data
   it('displays history table with ticket rows when data is present', () => {
     mockUseHistory.mockReturnValue({
-      loading: false,
+      ...createMockReturn(),
       history: [
         { key: 0, date: '10/23/2023', checkTime: '2023-10-23T16:30:00Z', number: '123485', station: 'TP. H? Chi Minh', isWon: true, prize: 'G8', amount: 100000 },
         { key: 1, date: '10/23/2023', checkTime: '2023-10-23T16:30:01Z', number: '000000', station: 'TP. H? Chi Minh', isWon: false, prize: 'No Prize', amount: 0 },
@@ -98,16 +116,24 @@ describe('HistoryAnalytics', () => {
 
   // 5.15 Empty state shown when no history
   it('shows empty state with CTA when no history exists', () => {
-    mockUseHistory.mockReturnValue({
-      loading: false,
-      history: [],
-      chartData: [],
-      hasHistory: false,
-    });
+    mockUseHistory.mockReturnValue(createMockReturn());
 
     renderWithRouter();
 
     expect(screen.getByText(/No history yet/)).toBeInTheDocument();
     expect(screen.getByText('Go to Lottery')).toBeInTheDocument();
+  });
+
+  // 5.16 Loading state shows spinner
+  it('shows spinner while loading', () => {
+    mockUseHistory.mockReturnValue({
+      ...createMockReturn(),
+      loading: true,
+    });
+
+    renderWithRouter();
+
+    // antd Spin renders with aria-busy or the spinning class
+    expect(document.querySelector('.ant-spin-spinning')).toBeInTheDocument();
   });
 });

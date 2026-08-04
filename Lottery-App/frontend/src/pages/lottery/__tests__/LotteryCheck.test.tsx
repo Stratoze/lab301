@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import dayjs from 'dayjs';
 import LotteryCheck from '../LotteryCheck';
@@ -21,31 +21,32 @@ vi.mock('antd', async () => {
   };
 });
 
+/** Type-safe factory so mock shape stays in sync with the hook's return type */
+const createMockReturn = (): ReturnType<typeof useLotteryChecker> => ({
+  loading: false,
+  stations: [],
+  results: null,
+  isGuest: true,
+  form: { stationId: null, date: dayjs(), numbers: '' },
+  setForm: vi.fn(),
+  handleCheck: vi.fn(),
+  setResults: vi.fn(),
+  availableDates: [],
+});
+
 describe('LotteryCheck', () => {
   beforeEach(() => {
-    mockUseLotteryChecker.mockReturnValue({
-      loading: false,
-      stations: [],
-      results: null,
-      isGuest: true,
-      form: { stationId: null as number | null, date: dayjs(), numbers: '' },
-      setForm: vi.fn(),
-      handleCheck: vi.fn(),
-      setResults: vi.fn(),
-      availableDates: [],
-    });
+    mockUseLotteryChecker.mockReturnValue(createMockReturn());
   });
 
   // 5.1 Guest sees single ticket input
   it('shows single-ticket input for guest user', () => {
     mockUseLotteryChecker.mockReturnValue({
-      ...mockUseLotteryChecker(),
+      ...createMockReturn(),
       isGuest: true,
     });
 
-    act(() => {
-      render(<LotteryCheck />);
-    });
+    render(<LotteryCheck />);
 
     expect(screen.getByText('Lottery Check')).toBeInTheDocument();
     expect(screen.getByText('Check Ticket')).toBeInTheDocument();
@@ -55,13 +56,11 @@ describe('LotteryCheck', () => {
   // 5.2 Authenticated user gets multi-line input
   it('shows multi-line input for authenticated user', () => {
     mockUseLotteryChecker.mockReturnValue({
-      ...mockUseLotteryChecker(),
+      ...createMockReturn(),
       isGuest: false,
     });
 
-    act(() => {
-      render(<LotteryCheck />);
-    });
+    render(<LotteryCheck />);
 
     expect(screen.getByPlaceholderText(/Enter ticket numbers/i)).toBeInTheDocument();
   });
@@ -76,14 +75,12 @@ describe('LotteryCheck', () => {
     };
 
     mockUseLotteryChecker.mockReturnValue({
-      ...mockUseLotteryChecker(),
+      ...createMockReturn(),
       isGuest: false,
       results: checkResult,
     });
 
-    act(() => {
-      render(<LotteryCheck />);
-    });
+    render(<LotteryCheck />);
 
     expect(screen.getByText(/Ticket: 123485/)).toBeInTheDocument();
     expect(screen.getByText(/Congratulations!! you won the G8 prize/)).toBeInTheDocument();
@@ -101,14 +98,12 @@ describe('LotteryCheck', () => {
     };
 
     mockUseLotteryChecker.mockReturnValue({
-      ...mockUseLotteryChecker(),
+      ...createMockReturn(),
       isGuest: true,
       results: checkResult,
     });
 
-    act(() => {
-      render(<LotteryCheck />);
-    });
+    render(<LotteryCheck />);
 
     expect(screen.getByText(/Better luck next time/)).toBeInTheDocument();
     expect(screen.getByText(/Total Won: 0 VND/)).toBeInTheDocument();
@@ -124,14 +119,12 @@ describe('LotteryCheck', () => {
     };
 
     mockUseLotteryChecker.mockReturnValue({
-      ...mockUseLotteryChecker(),
+      ...createMockReturn(),
       isGuest: false,
       results: checkResult,
     });
 
-    act(() => {
-      render(<LotteryCheck />);
-    });
+    render(<LotteryCheck />);
 
     expect(screen.getByText('Share')).toBeInTheDocument();
   });
@@ -146,15 +139,26 @@ describe('LotteryCheck', () => {
     };
 
     mockUseLotteryChecker.mockReturnValue({
-      ...mockUseLotteryChecker(),
+      ...createMockReturn(),
       isGuest: true,
       results: checkResult,
     });
 
-    act(() => {
-      render(<LotteryCheck />);
-    });
+    render(<LotteryCheck />);
 
     expect(screen.queryByText('Share')).not.toBeInTheDocument();
+  });
+
+  // 5.7 Loading state shows spinner on check button
+  it('shows loading state on check button while checking', () => {
+    mockUseLotteryChecker.mockReturnValue({
+      ...createMockReturn(),
+      loading: true,
+    });
+
+    render(<LotteryCheck />);
+
+    const button = screen.getByRole('button', { name: /Check Ticket/i });
+    expect(button).toHaveClass('ant-btn-loading');
   });
 });

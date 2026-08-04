@@ -33,11 +33,17 @@ public class SocialAuthServiceImpl implements SocialAuthService {
     public SocialAuthServiceImpl(UserRepository userRepository,
                                   UserAuthProviderRepository authProviderRepository,
                                   JwtService jwtService,
-                                  UserCodeGenerator userCodeGenerator) {
+                                  UserCodeGenerator userCodeGenerator,
+                                  @Value("${google.client-id:}") String googleClientId,
+                                  @Value("${facebook.app-id:}") String facebookAppId,
+                                  @Value("${facebook.app-secret:}") String facebookAppSecret) {
         this.userRepository = userRepository;
         this.authProviderRepository = authProviderRepository;
         this.jwtService = jwtService;
         this.userCodeGenerator = userCodeGenerator;
+        this.googleClientId = googleClientId;
+        this.facebookAppId = facebookAppId;
+        this.facebookAppSecret = facebookAppSecret;
 
         // RestTemplate with connect/read timeouts to prevent thread blocking
         var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
@@ -51,19 +57,13 @@ public class SocialAuthServiceImpl implements SocialAuthService {
     private final JwtService jwtService;
     private final RestTemplate restTemplate;
     private final UserCodeGenerator userCodeGenerator;
+    private final String googleClientId;
+    private final String facebookAppId;
+    private final String facebookAppSecret;
 
     /** JWKS cache with TTL (refresh every 6 hours) */
     private static final long JWKS_TTL_MS = 6 * 60 * 60 * 1000L;
     private volatile long jwksCacheTimestamp = 0;
-
-    @Value("${google.client-id:}")
-    private String googleClientId;
-
-    @Value("${facebook.app-id:}")
-    private String facebookAppId;
-
-    @Value("${facebook.app-secret:}")
-    private String facebookAppSecret;
 
     /** Cached Google JWKS keys, refreshed on first failure */
     private Map<String, PublicKey> cachedGoogleKeys;
