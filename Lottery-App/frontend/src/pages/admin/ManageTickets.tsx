@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, Skeleton, Card } from 'antd';
+import { Table, Tag, Button, Input, Space, DatePicker, Select, message, Modal, Skeleton, Card, Pagination } from 'antd';
 import { EditOutlined, PlusOutlined, EyeOutlined, ExclamationCircleOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import dayjs from 'dayjs';
@@ -295,6 +295,16 @@ const ManageTickets: React.FC = () => {
               <TicketCard key={ticket.id} ticket={ticket} onEdit={handleEdit} />
             ))}
           </CardList>
+          {total > pageSize && (
+            <Pagination
+              current={page + 1}
+              pageSize={pageSize}
+              total={total}
+              onChange={(p) => setPage(p - 1)}
+              simple
+              style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}
+            />
+          )}
         </div>
       </DashboardCard>
 

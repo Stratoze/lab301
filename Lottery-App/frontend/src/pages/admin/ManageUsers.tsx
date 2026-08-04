@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Table, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton, Card } from 'antd';
+import { Table, Tag, Radio, Button, Input, Space, Dropdown, message, Modal, Form, Select, Typography, Skeleton, Card, Pagination } from 'antd';
 import { EditOutlined, DownOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserOutlined, StopOutlined, SearchOutlined, CheckCircleFilled, CloseCircleFilled, MailFilled, InfoCircleFilled, SendOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import apiClient from '../../api/apiClient';
@@ -140,7 +140,7 @@ const ManageUsers: React.FC = () => {
         isActive: values.isActive
       };
       await apiClient.put(`/admin/users/${editingUser.id}`, payload);
-      message.success('User updated successfully. Note: role changes require re-login to take effect.');
+      message.success('User updated successfully. Note: role changes require refresh to take ui effect.');
       setIsModalOpen(false);
       triggerRefresh();
     } catch (e: unknown) {
@@ -323,13 +323,31 @@ const ManageUsers: React.FC = () => {
   const mobileControls = (
     <>
       <Input
-        placeholder="input search text"
+        placeholder="email/phone/usercode"
         prefix={<SearchOutlined/>}
         onChange={(e) => {
           setKeyword(e.target.value);
           setPage(0);
         }}
         allowClear
+      />
+      <Select
+        placeholder="Filter: last login"
+        value={loginFilter}
+        onChange={(value) => {
+          setLoginFilter(value);
+          setPage(0);
+          triggerRefresh();
+        }}
+        allowClear
+        style={{ width: '100%' }}
+        options={[
+          { value: 'inactive-1w', label: 'Inactive 1 week' },
+          { value: 'inactive-1m', label: 'Inactive 1 month' },
+          { value: 'inactive-3m', label: 'Inactive 3 months' },
+          { value: 'inactive-6m', label: 'Inactive 6 months' },
+          { value: 'inactive-1y', label: 'Inactive 1 year' },
+        ]}
       />
       <div style={{ display: 'flex', gap: 8 }}>
         <Button
@@ -421,6 +439,16 @@ const ManageUsers: React.FC = () => {
               );
             })}
           </CardList>
+          {total > pageSize && (
+            <Pagination
+              current={page + 1}
+              pageSize={pageSize}
+              total={total}
+              onChange={(p) => setPage(p - 1)}
+              simple
+              style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}
+            />
+          )}
         </div>
       </DashboardCard>
 
