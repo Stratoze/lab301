@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
@@ -94,7 +95,7 @@ class AdminTicketControllerTest {
         ResponseEntity<ApiResponse<PagedResponse<TicketResponse>>> response =
                 adminTicketController.getTickets(
                         1, LocalDate.of(2023, 10, 1),
-                        LocalDate.of(2023, 10, 31), null, 0, 10);
+                        LocalDate.of(2023, 10, 31), null, PageRequest.of(0, 10));
 
         assertThat(response.getBody().getData().getContent()).hasSize(1);
         assertThat(response.getBody().getData().getContent().get(0).status())
@@ -111,7 +112,7 @@ class AdminTicketControllerTest {
                 .thenReturn(page);
 
         ResponseEntity<ApiResponse<PagedResponse<TicketResponse>>> response =
-                adminTicketController.getTickets(null, null, null, null, 0, 10);
+                adminTicketController.getTickets(null, null, null, null, PageRequest.of(0, 10));
 
         assertThat(response.getBody().getData().getContent()).hasSize(2);
     }
