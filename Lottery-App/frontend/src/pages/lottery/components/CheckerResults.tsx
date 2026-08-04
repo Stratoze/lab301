@@ -38,10 +38,10 @@ const CheckerResults: React.FC<CheckerResultsProps> = ({ results, isGuest }) => 
                 type="primary"
                 icon={<FacebookFilled />}
                 onClick={() => {
+                  // FB sharer only accepts `u` param; quote/hashtag are stripped by FB security policy
                   const shareUrl =
                     `https://www.facebook.com/sharer/sharer.php?u=` +
-                    `${encodeURIComponent(window.location.href)}` +
-                    `&quote=I just won ${res.prize} with ticket ${res.number}!`;
+                    `${encodeURIComponent(window.location.href)}`;
 
                   window.open(shareUrl, '_blank', 'width=600,height=400');
                 }}
