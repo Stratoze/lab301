@@ -11,22 +11,23 @@ USE lottery_db;
 SET @pwd = '$2a$12$Jf6a0eHS/vrrMvw3Psy.nOzOxT8uVrPd6Gp.uO90M11c8vjIH5o32';
 
 -- ===== USERS (15 records) =====
-INSERT INTO users (user_code, email, phone, password, full_name, role, is_active) VALUES
-('USR-10-2023-00000001', 'admin@veso.vn', '0900000001', @pwd, 'Phan Đặng Duy Phúc', 'ROLE_ADMIN', 1),
-('USR-10-2023-00000002', 'staff@veso.vn', '0900000002', @pwd, 'Nguyễn Nhân Viên', 'ROLE_ADMIN', 1),
-('USR-10-2023-00000003', 'khach1@gmail.com', '0910000001', @pwd, 'Lê Văn Tám', 'ROLE_USER', 1),
-('USR-10-2023-00000004', 'khach2@gmail.com', '0910000002', @pwd, 'Trần Thị Chín', 'ROLE_USER', 1),
-('USR-10-2023-00000005', 'google_u@gmail.com', NULL, NULL, 'User Google', 'ROLE_USER', 1),
-('USR-10-2023-00000006', 'fb_u@gmail.com', NULL, NULL, 'User Facebook', 'ROLE_USER', 1),
-('USR-10-2023-00000007', 'test3@gmail.com', '0910000007', @pwd, 'Lý Tiểu Long', 'ROLE_USER', 1),
-('USR-10-2023-00000008', 'test4@gmail.com', '0910000008', @pwd, 'Châu Tinh Trì', 'ROLE_USER', 1),
-('USR-11-2023-00000001', 'locked@gmail.com', '0910000009', @pwd, 'Người Bị Khóa', 'ROLE_USER', 0),
-('USR-11-2023-00000002', 'test5@gmail.com', '0910000010', @pwd, 'Ngô Thanh Vân', 'ROLE_USER', 1),
-('USR-11-2023-00000003', 'test6@gmail.com', '0910000011', @pwd, 'Trương Ngọc Ánh', 'ROLE_USER', 1),
-('USR-11-2023-00000004', 'test7@gmail.com', '0910000012', @pwd, 'Sơn Tùng MTP', 'ROLE_USER', 1),
-('USR-11-2023-00000005', 'test8@gmail.com', '0910000013', @pwd, 'Hồ Ngọc Hà', 'ROLE_USER', 1),
-('USR-11-2023-00000006', 'test9@gmail.com', '0910000014', @pwd, 'Đen Vâu', 'ROLE_USER', 1),
-('USR-11-2023-00000007', 'test10@gmail.com', '0910000015', @pwd, 'Mỹ Tâm', 'ROLE_USER', 1);
+-- last_login varied so the "inactive" filter actually differentiates
+INSERT INTO users (user_code, email, phone, password, full_name, role, is_active, last_login) VALUES
+('USR-10-2023-00000001', 'admin@veso.vn', '0900000001', @pwd, 'Phan Đặng Duy Phúc', 'ROLE_ADMIN', 1, NOW()),
+('USR-10-2023-00000002', 'staff@veso.vn', '0900000002', @pwd, 'Nguyễn Nhân Viên', 'ROLE_ADMIN', 1, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+('USR-10-2023-00000003', 'khach1@gmail.com', '0910000001', @pwd, 'Lê Văn Tám', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+('USR-10-2023-00000004', 'khach2@gmail.com', '0910000002', @pwd, 'Trần Thị Chín', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+('USR-10-2023-00000005', 'google_u@gmail.com', NULL, NULL, 'User Google', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 2 MONTH)),
+('USR-10-2023-00000006', 'fb_u@gmail.com', NULL, NULL, 'User Facebook', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 7 MONTH)),
+('USR-10-2023-00000007', 'test3@gmail.com', '0910000007', @pwd, 'Lý Tiểu Long', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 1 YEAR)),
+('USR-10-2023-00000008', 'test4@gmail.com', '0910000008', @pwd, 'Châu Tinh Trì', 'ROLE_USER', 1, NULL),
+('USR-11-2023-00000001', 'locked@gmail.com', '0910000009', @pwd, 'Người Bị Khóa', 'ROLE_USER', 0, DATE_SUB(NOW(), INTERVAL 3 MONTH)),
+('USR-11-2023-00000002', 'test5@gmail.com', '0910000010', @pwd, 'Ngô Thanh Vân', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 10 DAY)),
+('USR-11-2023-00000003', 'test6@gmail.com', '0910000011', @pwd, 'Trương Ngọc Ánh', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 45 DAY)),
+('USR-11-2023-00000004', 'test7@gmail.com', '0910000012', @pwd, 'Sơn Tùng MTP', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 4 MONTH)),
+('USR-11-2023-00000005', 'test8@gmail.com', '0910000013', @pwd, 'Hồ Ngọc Hà', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 8 MONTH)),
+('USR-11-2023-00000006', 'test9@gmail.com', '0910000014', @pwd, 'Đen Vâu', 'ROLE_USER', 1, DATE_SUB(NOW(), INTERVAL 2 YEAR)),
+('USR-11-2023-00000007', 'test10@gmail.com', '0910000015', @pwd, 'Mỹ Tâm', 'ROLE_USER', 1, NULL);
 
 -- ===== USER AUTH PROVIDERS (15 records) =====
 INSERT INTO user_auth_providers (user_id, provider, provider_id) VALUES
