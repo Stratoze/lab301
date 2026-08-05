@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.lottery.checker.controller;
+
+import com.lottery.checker.dto.request.LoginRequest;
+import com.lottery.checker.dto.request.RegisterRequest;
+import com.lottery.checker.dto.request.SocialLoginRequest;
+import com.lottery.checker.dto.response.ApiResponse;
+import com.lottery.checker.dto.response.AuthResponse;
+import com.lottery.checker.dto.response.PasswordRulesResponse;
+import com.lottery.checker.service.AuthService;
+import com.lottery.checker.service.SocialAuthService;
+import com.lottery.checker.service.UserService;
+import com.lottery.checker.validation.PasswordRulesHolder;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/api/v1/auth&quot;)
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final UserService userService;
+    private final SocialAuthService socialAuthService;
+    private final AuthService authService;
+    private final PasswordRulesHolder passwordRulesHolder;
+
+    @PostMapping(&quot;/register&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; register(@Valid @RequestBody RegisterRequest request) {
+<span class="fc" id="L31">        userService.register(request);</span>
+
+<span class="fc" id="L33">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="fc" id="L34">                .body(ApiResponse.success(&quot;User registered successfully&quot;));</span>
+    }
+
+    @PostMapping(&quot;/social&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;AuthResponse&gt;&gt; socialLogin(@Valid @RequestBody SocialLoginRequest request) {
+<span class="nc" id="L39">        AuthResponse response = socialAuthService.authenticate(request);</span>
+<span class="nc" id="L40">        return ResponseEntity.ok(ApiResponse.success(response));</span>
+    }
+
+    @GetMapping(&quot;/password-rules&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;PasswordRulesResponse&gt;&gt; getPasswordRules() {
+<span class="nc" id="L45">        PasswordRulesResponse rules = new PasswordRulesResponse(</span>
+<span class="nc" id="L46">                passwordRulesHolder.getMinLength(),</span>
+<span class="nc" id="L47">                passwordRulesHolder.getMaxLength(),</span>
+<span class="nc" id="L48">                passwordRulesHolder.getBlocklist()</span>
+        );
+
+<span class="nc" id="L51">        return ResponseEntity.ok(ApiResponse.success(rules));</span>
+    }
+
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;AuthResponse&gt;&gt; login(@Valid @RequestBody LoginRequest request) {
+<span class="fc" id="L56">        return ResponseEntity.ok(ApiResponse.success(authService.login(request)));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

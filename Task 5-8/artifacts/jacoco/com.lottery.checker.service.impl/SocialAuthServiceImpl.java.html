@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SocialAuthServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.service.impl</a> &gt; <span class="el_source">SocialAuthServiceImpl.java</span></div><h1>SocialAuthServiceImpl.java</h1><pre class="source lang-java linenums">package com.lottery.checker.service.impl;
+
+import com.lottery.checker.dto.request.SocialLoginRequest;
+import com.lottery.checker.dto.response.AuthResponse;
+import com.lottery.checker.service.UserCodeGenerator;
+import com.lottery.checker.entity.Role;
+import com.lottery.checker.entity.User;
+import com.lottery.checker.entity.UserAuthProvider;
+import com.lottery.checker.repository.UserAuthProviderRepository;
+import com.lottery.checker.repository.UserRepository;
+import com.lottery.checker.security.JwtService;
+import com.lottery.checker.service.SocialAuthService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+
+import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.RSAPublicKeySpec;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Service
+public class SocialAuthServiceImpl implements SocialAuthService {
+
+    public SocialAuthServiceImpl(UserRepository userRepository,
+                                  UserAuthProviderRepository authProviderRepository,
+                                  JwtService jwtService,
+                                  UserCodeGenerator userCodeGenerator,
+                                  @Value(&quot;${google.client-id:}&quot;) String googleClientId,
+                                  @Value(&quot;${facebook.app-id:}&quot;) String facebookAppId,
+<span class="fc" id="L39">                                  @Value(&quot;${facebook.app-secret:}&quot;) String facebookAppSecret) {</span>
+<span class="fc" id="L40">        this.userRepository = userRepository;</span>
+<span class="fc" id="L41">        this.authProviderRepository = authProviderRepository;</span>
+<span class="fc" id="L42">        this.jwtService = jwtService;</span>
+<span class="fc" id="L43">        this.userCodeGenerator = userCodeGenerator;</span>
+<span class="fc" id="L44">        this.googleClientId = googleClientId;</span>
+<span class="fc" id="L45">        this.facebookAppId = facebookAppId;</span>
+<span class="fc" id="L46">        this.facebookAppSecret = facebookAppSecret;</span>
+
+        // RestTemplate with connect/read timeouts to prevent thread blocking
+<span class="fc" id="L49">        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();</span>
+<span class="fc" id="L50">        factory.setConnectTimeout(java.time.Duration.ofSeconds(5));</span>
+<span class="fc" id="L51">        factory.setReadTimeout(java.time.Duration.ofSeconds(10));</span>
+<span class="fc" id="L52">        this.restTemplate = new RestTemplate(factory);</span>
+<span class="fc" id="L53">    }</span>
+
+    private final UserRepository userRepository;
+    private final UserAuthProviderRepository authProviderRepository;
+    private final JwtService jwtService;
+    private final RestTemplate restTemplate;
+    private final UserCodeGenerator userCodeGenerator;
+    private final String googleClientId;
+    private final String facebookAppId;
+    private final String facebookAppSecret;
+
+    /** JWKS cache with TTL (refresh every 6 hours) */
+    private static final long JWKS_TTL_MS = 6 * 60 * 60 * 1000L;
+<span class="fc" id="L66">    private volatile long jwksCacheTimestamp = 0;</span>
+
+    /** Cached Google JWKS keys, refreshed on first failure */
+    private Map&lt;String, PublicKey&gt; cachedGoogleKeys;
+
+    @Override
+    @Transactional
+    public AuthResponse authenticate(SocialLoginRequest request) {
+<span class="fc bfc" id="L74" title="All 3 branches covered.">        SocialUserInfo info = switch (request.provider().toUpperCase()) {</span>
+<span class="fc" id="L75">            case &quot;GOOGLE&quot; -&gt; verifyGoogleToken(request.token());</span>
+<span class="fc" id="L76">            case &quot;FACEBOOK&quot; -&gt; verifyFacebookToken(request.token());</span>
+<span class="fc" id="L77">            default -&gt; throw new SecurityException(&quot;Unsupported provider: &quot; + request.provider());</span>
+        };
+
+<span class="fc" id="L80">        User user = authProviderRepository</span>
+<span class="fc" id="L81">                .findByProviderAndProviderId(request.provider().toUpperCase(), info.providerId())</span>
+<span class="fc" id="L82">                .map(UserAuthProvider::getUser)</span>
+<span class="fc" id="L83">                .orElse(null);</span>
+
+        // Block inactive users from social login
+<span class="fc bfc" id="L86" title="All 4 branches covered.">        if (user != null &amp;&amp; !user.getIsActive()) {</span>
+<span class="fc" id="L87">            throw new SecurityException(&quot;Your account is blocked. Please contact support.&quot;);</span>
+        }
+
+<span class="pc bpc" id="L90" title="1 of 4 branches missed.">        if (user == null &amp;&amp; info.email() != null) {</span>
+<span class="fc" id="L91">            user = userRepository.findByEmail(info.email()).orElse(null);</span>
+        }
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L95">            user = User.builder()</span>
+<span class="fc" id="L96">                    .userCode(userCodeGenerator.generate())</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">                    .email(info.email() != null ? info.email() : info.providerId() + &quot;@&quot; + request.provider().toLowerCase() + &quot;.social&quot;)</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                    .fullName(info.name() != null ? info.name() : &quot;Social User&quot;)</span>
+<span class="fc" id="L99">                    .password(null)</span>
+<span class="fc" id="L100">                    .role(Role.ROLE_USER)</span>
+<span class="fc" id="L101">                    .isActive(true)</span>
+<span class="fc" id="L102">                    .lastLogin(LocalDateTime.now())</span>
+<span class="fc" id="L103">                    .build();</span>
+        } else {
+<span class="fc" id="L105">            user.setLastLogin(LocalDateTime.now());</span>
+        }
+
+<span class="fc" id="L108">        user = userRepository.save(user);</span>
+
+<span class="fc" id="L110">        boolean alreadyLinked = authProviderRepository</span>
+<span class="fc" id="L111">                .findByProviderAndProviderId(request.provider().toUpperCase(), info.providerId())</span>
+<span class="fc" id="L112">                .isPresent();</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (!alreadyLinked) {</span>
+<span class="fc" id="L114">            authProviderRepository.save(UserAuthProvider.builder()</span>
+<span class="fc" id="L115">                    .user(user)</span>
+<span class="fc" id="L116">                    .provider(request.provider().toUpperCase())</span>
+<span class="fc" id="L117">                    .providerId(info.providerId())</span>
+<span class="fc" id="L118">                    .build());</span>
+        }
+
+        // Generate JWT
+<span class="fc" id="L122">        String token = jwtService.generateToken(user.getEmail(), Map.of(&quot;role&quot;, user.getRole().name()));</span>
+<span class="fc" id="L123">        return new AuthResponse(token, user.getUserCode(), user.getFullName(), user.getRole());</span>
+    }
+
+    // ── GOOGLE: proper JWT signature + aud/iss validation ──
+
+    private SocialUserInfo verifyGoogleToken(String idToken) {
+        // 1. Decode header to get key ID (kid)
+<span class="fc" id="L130">        String[] parts = idToken.split(&quot;\\.&quot;);</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (parts.length &lt; 2) throw new SecurityException(&quot;Invalid token format&quot;);</span>
+<span class="fc" id="L132">        String decodedHeader = new String(Base64.getUrlDecoder().decode(parts[0]));</span>
+<span class="fc" id="L133">        String kid = extractJsonValue(decodedHeader, &quot;kid&quot;);</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (kid == null) throw new SecurityException(&quot;Missing kid in token header&quot;);</span>
+
+        // 2. Get Google public key matching kid (cached)
+<span class="fc" id="L137">        PublicKey publicKey = getGooglePublicKey(kid);</span>
+
+        // 3. Parse and validate token signature + claims
+        Claims claims;
+        try {
+<span class="fc" id="L142">            claims = Jwts.parser()</span>
+<span class="fc" id="L143">                    .verifyWith(publicKey)</span>
+<span class="fc" id="L144">                    .build()</span>
+<span class="fc" id="L145">                    .parseSignedClaims(idToken)</span>
+<span class="fc" id="L146">                    .getPayload();</span>
+<span class="fc" id="L147">        } catch (Exception e) {</span>
+<span class="fc" id="L148">            throw new SecurityException(&quot;Google token signature invalid&quot;, e);</span>
+<span class="fc" id="L149">        }</span>
+
+        // 4. Validate audience (must match our client ID ? handles single string or array)
+<span class="fc" id="L152">        Object audObj = claims.get(&quot;aud&quot;);</span>
+<span class="pc bpc" id="L153" title="2 of 4 branches missed.">        if (googleClientId != null &amp;&amp; !googleClientId.isEmpty()) {</span>
+<span class="fc" id="L154">            boolean audMatch = false;</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (audObj instanceof String s) {</span>
+<span class="nc" id="L156">                audMatch = googleClientId.equals(s);</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">            } else if (audObj instanceof java.util.Collection&lt;?&gt; c) {</span>
+<span class="fc" id="L158">                audMatch = c.contains(googleClientId);</span>
+            }
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            if (!audMatch) {</span>
+<span class="fc" id="L161">                throw new SecurityException(&quot;Token audience does not match our client ID&quot;);</span>
+            }
+        }
+
+        // 5. Validate issuer
+<span class="fc" id="L166">        String iss = claims.getIssuer();</span>
+<span class="pc bpc" id="L167" title="2 of 6 branches missed.">        if (iss != null &amp;&amp; !iss.equals(&quot;https://accounts.google.com&quot;) &amp;&amp; !iss.equals(&quot;accounts.google.com&quot;)) {</span>
+<span class="fc" id="L168">            throw new SecurityException(&quot;Invalid issuer: &quot; + iss);</span>
+        }
+
+<span class="fc" id="L171">        return new SocialUserInfo(</span>
+<span class="fc" id="L172">            claims.getSubject(),</span>
+<span class="fc" id="L173">            claims.get(&quot;email&quot;, String.class),</span>
+<span class="fc" id="L174">            claims.get(&quot;name&quot;, String.class)</span>
+        );
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private PublicKey getGooglePublicKey(String kid) {
+        // Use cache if available and not expired (TTL = 6 hours)
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">        if (cachedGoogleKeys != null</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">                &amp;&amp; cachedGoogleKeys.containsKey(kid)</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                &amp;&amp; (System.currentTimeMillis() - jwksCacheTimestamp) &lt; JWKS_TTL_MS) {</span>
+<span class="nc" id="L184">            return cachedGoogleKeys.get(kid);</span>
+        }
+
+        // Fetch fresh JWKS
+        Map&lt;String, Object&gt; jwks;
+        try {
+<span class="fc" id="L190">            jwks = restTemplate.getForObject(&quot;https://www.googleapis.com/oauth2/v3/certs&quot;, Map.class);</span>
+<span class="nc" id="L191">        } catch (Exception e) {</span>
+<span class="nc" id="L192">            throw new SecurityException(&quot;Failed to fetch Google JWKS&quot;, e);</span>
+<span class="fc" id="L193">        }</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (jwks == null) {</span>
+<span class="nc" id="L195">            throw new SecurityException(&quot;Empty response from Google JWKS endpoint&quot;);</span>
+        }
+
+<span class="fc" id="L198">        cachedGoogleKeys = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L199">        jwksCacheTimestamp = System.currentTimeMillis();</span>
+<span class="fc" id="L200">        List&lt;Map&lt;String, Object&gt;&gt; keys = (List&lt;Map&lt;String, Object&gt;&gt;) jwks.get(&quot;keys&quot;);</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; key : keys) {</span>
+<span class="fc" id="L202">            String k = (String) key.get(&quot;kid&quot;);</span>
+            try {
+<span class="fc" id="L204">                BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode((String) key.get(&quot;n&quot;)));</span>
+<span class="fc" id="L205">                BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode((String) key.get(&quot;e&quot;)));</span>
+<span class="fc" id="L206">                PublicKey pk = KeyFactory.getInstance(&quot;RSA&quot;)</span>
+<span class="fc" id="L207">                        .generatePublic(new RSAPublicKeySpec(modulus, exponent));</span>
+<span class="fc" id="L208">                cachedGoogleKeys.put(k, pk);</span>
+<span class="nc" id="L209">            } catch (Exception e) {</span>
+<span class="nc" id="L210">                throw new SecurityException(&quot;Failed to build Google public key&quot;, e);</span>
+<span class="fc" id="L211">            }</span>
+<span class="fc" id="L212">        }</span>
+
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        if (!cachedGoogleKeys.containsKey(kid)) {</span>
+<span class="nc" id="L215">            throw new SecurityException(&quot;No Google public key found for kid: &quot; + kid);</span>
+        }
+<span class="fc" id="L217">        return cachedGoogleKeys.get(kid);</span>
+    }
+
+    /** Extremely simple JSON string value extractor (no extra deps needed) */
+    private String extractJsonValue(String json, String key) {
+<span class="fc" id="L222">        String search = &quot;\&quot;&quot; + key + &quot;\&quot;&quot;;</span>
+<span class="fc" id="L223">        int idx = json.indexOf(search);</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">        if (idx &lt; 0) return null;</span>
+<span class="fc" id="L225">        int colon = json.indexOf(&quot;:&quot;, idx);</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">        if (colon &lt; 0) return null;</span>
+<span class="fc" id="L227">        int start = json.indexOf(&quot;\&quot;&quot;, colon);</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        if (start &lt; 0) return null;</span>
+<span class="fc" id="L229">        int end = json.indexOf(&quot;\&quot;&quot;, start + 1);</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">        if (end &lt; 0) return null;</span>
+<span class="fc" id="L231">        return json.substring(start + 1, end);</span>
+    }
+
+    // ── FACEBOOK: debug_token with app access token ──
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private SocialUserInfo verifyFacebookToken(String userAccessToken) {
+<span class="pc bpc" id="L238" title="4 of 8 branches missed.">        if (facebookAppId == null || facebookAppId.isEmpty() || facebookAppSecret == null || facebookAppSecret.isEmpty()) {</span>
+<span class="nc" id="L239">            throw new SecurityException(&quot;Facebook app ID or secret not configured on server&quot;);</span>
+        }
+
+        // 1. Build app access token
+<span class="fc" id="L243">        String appAccessToken = facebookAppId + &quot;|&quot; + facebookAppSecret;</span>
+
+        // 2. Debug user token
+<span class="fc" id="L246">        String debugUrl = &quot;https://graph.facebook.com/debug_token&quot;</span>
+                + &quot;?input_token=&quot; + userAccessToken
+                + &quot;&amp;access_token=&quot; + appAccessToken;
+
+        Map&lt;String, Object&gt; debugJson;
+        try {
+<span class="fc" id="L252">            debugJson = restTemplate.getForObject(debugUrl, Map.class);</span>
+<span class="nc" id="L253">        } catch (Exception e) {</span>
+<span class="nc" id="L254">            throw new SecurityException(&quot;Failed to verify Facebook token&quot;, e);</span>
+<span class="fc" id="L255">        }</span>
+
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        if (debugJson == null) throw new SecurityException(&quot;Empty response from Facebook debug_token&quot;);</span>
+
+<span class="fc" id="L259">        Map&lt;String, Object&gt; data = (Map&lt;String, Object&gt;) debugJson.get(&quot;data&quot;);</span>
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        if (data == null) throw new SecurityException(&quot;Missing data in Facebook debug response&quot;);</span>
+
+<span class="fc" id="L262">        Boolean isValid = (Boolean) data.get(&quot;is_valid&quot;);</span>
+<span class="fc" id="L263">        String appId = (String) data.get(&quot;app_id&quot;);</span>
+
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        if (!Boolean.TRUE.equals(isValid)) throw new SecurityException(&quot;Facebook token is not valid&quot;);</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        if (!facebookAppId.equals(appId)) throw new SecurityException(&quot;Facebook token was not issued for our app&quot;);</span>
+
+        // 3. Get user info
+<span class="fc" id="L269">        String meUrl = &quot;https://graph.facebook.com/me?fields=id,name,email&amp;access_token=&quot; + userAccessToken;</span>
+        Map&lt;String, Object&gt; meJson;
+        try {
+<span class="fc" id="L272">            meJson = restTemplate.getForObject(meUrl, Map.class);</span>
+<span class="nc" id="L273">        } catch (Exception e) {</span>
+<span class="nc" id="L274">            throw new SecurityException(&quot;Failed to fetch Facebook user info&quot;, e);</span>
+<span class="fc" id="L275">        }</span>
+
+<span class="pc bpc" id="L277" title="2 of 4 branches missed.">        if (meJson == null || meJson.containsKey(&quot;error&quot;)) throw new SecurityException(&quot;Invalid Facebook user token&quot;);</span>
+<span class="fc" id="L278">        return new SocialUserInfo(</span>
+<span class="fc" id="L279">            (String) meJson.get(&quot;id&quot;),</span>
+<span class="fc" id="L280">            (String) meJson.get(&quot;email&quot;),</span>
+<span class="fc" id="L281">            (String) meJson.get(&quot;name&quot;)</span>
+        );
+    }
+
+    // ── LINK PROVIDER (for existing users to add a social login) ──
+
+    @Override
+    @Transactional
+    public void linkProvider(User user, String provider, String token) {
+<span class="pc bpc" id="L290" title="1 of 3 branches missed.">        SocialUserInfo info = switch (provider.toUpperCase()) {</span>
+<span class="fc" id="L291">            case &quot;GOOGLE&quot; -&gt; verifyGoogleToken(token);</span>
+<span class="nc" id="L292">            case &quot;FACEBOOK&quot; -&gt; verifyFacebookToken(token);</span>
+<span class="fc" id="L293">            default -&gt; throw new SecurityException(&quot;Unsupported provider: &quot; + provider);</span>
+        };
+
+        // Check that this provider account is not already linked to another user
+<span class="fc" id="L297">        authProviderRepository</span>
+<span class="fc" id="L298">                .findByProviderAndProviderId(provider.toUpperCase(), info.providerId())</span>
+<span class="fc" id="L299">                .ifPresent(existing -&gt; {</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">                    if (!existing.getUser().getId().equals(user.getId())) {</span>
+<span class="fc" id="L301">                        throw new SecurityException(&quot;This &quot; + provider + &quot; account is already linked to a different user.&quot;);</span>
+                    }
+<span class="nc" id="L303">                });</span>
+
+<span class="fc" id="L305">        authProviderRepository.save(UserAuthProvider.builder()</span>
+<span class="fc" id="L306">                .user(user)</span>
+<span class="fc" id="L307">                .provider(provider.toUpperCase())</span>
+<span class="fc" id="L308">                .providerId(info.providerId())</span>
+<span class="fc" id="L309">                .build());</span>
+<span class="fc" id="L310">    }</span>
+
+<span class="fc" id="L312">    private record SocialUserInfo(String providerId, String email, String name) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

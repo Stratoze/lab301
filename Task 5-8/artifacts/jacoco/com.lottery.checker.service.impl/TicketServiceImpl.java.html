@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TicketServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.service.impl</a> &gt; <span class="el_source">TicketServiceImpl.java</span></div><h1>TicketServiceImpl.java</h1><pre class="source lang-java linenums">package com.lottery.checker.service.impl;
+
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
+import com.lottery.checker.exception.NotFoundException;
+
+import com.lottery.checker.dto.request.CreateTicketRequest;
+import com.lottery.checker.dto.request.PrizeRequest;
+import com.lottery.checker.dto.request.UpdateTicketStatusRequest;
+import com.lottery.checker.dto.response.PagedResponse;
+import com.lottery.checker.dto.response.TicketResponse;
+import com.lottery.checker.entity.LotteryResult;
+import com.lottery.checker.entity.LotteryStation;
+import com.lottery.checker.entity.PrizeDetail;
+import com.lottery.checker.entity.User;
+import com.lottery.checker.repository.LotteryResultRepository;
+import com.lottery.checker.repository.LotteryStationRepository;
+import com.lottery.checker.repository.UserRepository;
+import com.lottery.checker.service.TicketService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+@Service
+@RequiredArgsConstructor
+public class TicketServiceImpl implements TicketService {
+
+    private final LotteryResultRepository resultRepository;
+    private final LotteryStationRepository stationRepository;
+    private final UserRepository userRepository;
+
+<span class="fc" id="L45">    private static final Map&lt;String, Integer&gt; PRIZE_LENGTHS = Map.ofEntries(</span>
+<span class="fc" id="L46">            Map.entry(&quot;G_DB&quot;, 6),</span>
+<span class="fc" id="L47">            Map.entry(&quot;G1&quot;, 5),</span>
+<span class="fc" id="L48">            Map.entry(&quot;G2&quot;, 5),</span>
+<span class="fc" id="L49">            Map.entry(&quot;G3&quot;, 5),</span>
+<span class="fc" id="L50">            Map.entry(&quot;G4&quot;, 5),</span>
+<span class="fc" id="L51">            Map.entry(&quot;G5&quot;, 4),</span>
+<span class="fc" id="L52">            Map.entry(&quot;G6&quot;, 4),</span>
+<span class="fc" id="L53">            Map.entry(&quot;G7&quot;, 3),</span>
+<span class="fc" id="L54">            Map.entry(&quot;G8&quot;, 2)</span>
+    );
+
+    @Override
+    public List&lt;LotteryStation&gt; getAllStations() {
+<span class="nc" id="L59">        return stationRepository.findAllByOrderByRegionAscNameAsc();</span>
+    }
+
+    @Override
+    @Transactional
+    public TicketResponse createTicket(CreateTicketRequest request, String adminEmail) {
+<span class="fc" id="L65">        LotteryStation station = stationRepository.findById(request.stationId())</span>
+<span class="pc" id="L66">                .orElseThrow(() -&gt; new NotFoundException(&quot;Station not found&quot;));</span>
+
+<span class="fc" id="L68">        String status = normalizeStatus(request.status());</span>
+<span class="fc" id="L69">        validatePrizes(request.prizes());</span>
+
+<span class="fc" id="L71">        Optional&lt;LotteryResult&gt; existing =</span>
+<span class="fc" id="L72">                resultRepository.findByStationIdAndDrawDate(request.stationId(), request.drawDate());</span>
+
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (existing.isPresent()) {</span>
+<span class="fc" id="L75">            throw new ConflictException(&quot;A result already exists for this station and draw date.&quot;);</span>
+        }
+
+<span class="fc" id="L78">        LotteryResult result = LotteryResult.builder()</span>
+<span class="fc" id="L79">                .resultCode(generateResultCode(station, request.drawDate()))</span>
+<span class="fc" id="L80">                .station(station)</span>
+<span class="fc" id="L81">                .drawDate(request.drawDate())</span>
+<span class="fc" id="L82">                .status(status)</span>
+<span class="fc" id="L83">                .totalQueries(0L)</span>
+<span class="fc" id="L84">                .build();</span>
+
+<span class="fc" id="L86">        applyAuditAndPrizes(result, request.prizes(), status, adminEmail);</span>
+
+<span class="fc" id="L88">        return TicketResponse.fromEntity(resultRepository.save(result));</span>
+    }
+
+    @Override
+    @Transactional
+    public TicketResponse updateTicket(Long id, CreateTicketRequest request, String adminEmail) {
+<span class="fc" id="L94">        LotteryResult result = resultRepository.findById(id)</span>
+<span class="pc" id="L95">                .orElseThrow(() -&gt; new NotFoundException(&quot;Ticket not found&quot;));</span>
+
+<span class="fc" id="L97">        LotteryStation station = stationRepository.findById(request.stationId())</span>
+<span class="pc" id="L98">                .orElseThrow(() -&gt; new NotFoundException(&quot;Station not found&quot;));</span>
+
+<span class="fc" id="L100">        String status = normalizeStatus(request.status());</span>
+<span class="fc" id="L101">        validatePrizes(request.prizes());</span>
+
+<span class="fc" id="L103">        Optional&lt;LotteryResult&gt; existing =</span>
+<span class="fc" id="L104">                resultRepository.findByStationIdAndDrawDate(request.stationId(), request.drawDate());</span>
+
+<span class="pc bpc" id="L106" title="1 of 4 branches missed.">        if (existing.isPresent() &amp;&amp; !existing.get().getId().equals(id)) {</span>
+<span class="fc" id="L107">            throw new ConflictException(&quot;A result already exists for this station and draw date.&quot;);</span>
+        }
+
+<span class="fc" id="L110">        result.setStation(station);</span>
+<span class="fc" id="L111">        result.setDrawDate(request.drawDate());</span>
+<span class="fc" id="L112">        result.setResultCode(generateResultCode(station, request.drawDate()));</span>
+<span class="fc" id="L113">        result.setStatus(status);</span>
+
+<span class="fc" id="L115">        applyAuditAndPrizes(result, request.prizes(), status, adminEmail);</span>
+
+<span class="fc" id="L117">        return TicketResponse.fromEntity(resultRepository.save(result));</span>
+    }
+
+    @Override
+    public PagedResponse&lt;TicketResponse&gt; searchTickets(
+            Integer stationId,
+            LocalDate start,
+            LocalDate end,
+            String keyword,
+            Pageable pageable
+    ) {
+<span class="fc" id="L128">        Page&lt;LotteryResult&gt; page = resultRepository.searchTickets(stationId, start, end, keyword, pageable);</span>
+
+<span class="fc" id="L130">        List&lt;TicketResponse&gt; content = page.getContent().stream()</span>
+<span class="fc" id="L131">                .map(TicketResponse::fromEntity)</span>
+<span class="fc" id="L132">                .toList();</span>
+
+<span class="fc" id="L134">        return PagedResponse.&lt;TicketResponse&gt;builder()</span>
+<span class="fc" id="L135">                .content(content)</span>
+<span class="fc" id="L136">                .page(page.getNumber())</span>
+<span class="fc" id="L137">                .size(page.getSize())</span>
+<span class="fc" id="L138">                .totalElements(page.getTotalElements())</span>
+<span class="fc" id="L139">                .totalPages(page.getTotalPages())</span>
+<span class="fc" id="L140">                .last(page.isLast())</span>
+<span class="fc" id="L141">                .build();</span>
+    }
+
+    @Override
+    @Transactional
+    public void updateStatus(Long id, UpdateTicketStatusRequest request, String adminEmail) {
+<span class="fc" id="L147">        LotteryResult result = resultRepository.findById(id)</span>
+<span class="pc" id="L148">                .orElseThrow(() -&gt; new NotFoundException(&quot;Ticket not found&quot;));</span>
+
+<span class="fc" id="L150">        String normalizedStatus = normalizeStatus(request.status());</span>
+<span class="fc" id="L151">        result.setStatus(normalizedStatus);</span>
+
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (&quot;PUBLISH&quot;.equals(normalizedStatus)) {</span>
+<span class="fc" id="L154">            User admin = resolveAdmin(adminEmail);</span>
+<span class="fc" id="L155">            result.setPublishedBy(admin);</span>
+<span class="fc" id="L156">            result.setPublishedAt(LocalDateTime.now());</span>
+        }
+
+<span class="fc" id="L159">        resultRepository.save(result);</span>
+<span class="fc" id="L160">    }</span>
+
+    private void applyAuditAndPrizes(
+            LotteryResult result,
+            List&lt;PrizeRequest&gt; prizes,
+            String status,
+            String adminEmail
+    ) {
+<span class="fc" id="L168">        User admin = resolveAdmin(adminEmail);</span>
+
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (result.getCreatedBy() == null) {</span>
+<span class="fc" id="L171">            result.setCreatedBy(admin);</span>
+        }
+
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (&quot;PUBLISH&quot;.equals(status)) {</span>
+<span class="nc" id="L175">            result.setPublishedBy(admin);</span>
+<span class="nc" id="L176">            result.setPublishedAt(LocalDateTime.now());</span>
+        }
+
+        // Flatten the incoming request into an ordered type:number -&gt; amount map.
+<span class="fc" id="L180">        LinkedHashMap&lt;String, Long&gt; wanted = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        for (PrizeRequest prizeReq : prizes) {</span>
+<span class="fc" id="L182">            String type = prizeReq.type().trim().toUpperCase();</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">            for (String num : prizeReq.winningNumbers().split(&quot;[,\\s]+&quot;)) {</span>
+<span class="fc" id="L184">                String cleaned = num.trim();</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">                if (!cleaned.isBlank()) {</span>
+<span class="fc" id="L186">                    wanted.put(type + &quot;:&quot; + cleaned, prizeReq.rewardAmount());</span>
+                }
+            }
+<span class="fc" id="L189">        }</span>
+
+        // Diff against the current collection instead of clear()+re-add.
+        // Hibernate flushes INSERTs before DELETEs, so clearing then re-adding an
+        // unchanged (result_id, prize_type, winning_number) row violates the
+        // unique_idx_result_prize_number constraint on edit (the 409 &quot;Duplicate
+        // or invalid data&quot; bug). Reusing the managed entity issues a clean UPDATE;
+        // only rows that truly vanish are orphan-removed.
+<span class="fc" id="L197">        Map&lt;String, PrizeDetail&gt; currentByKey = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        for (PrizeDetail detail : result.getPrizeDetails()) {</span>
+<span class="nc" id="L199">            currentByKey.put(detail.getPrizeType() + &quot;:&quot; + detail.getWinningNumber(), detail);</span>
+<span class="nc" id="L200">        }</span>
+
+<span class="fc" id="L202">        Set&lt;String&gt; wantedKeys = new HashSet&lt;&gt;(wanted.keySet());</span>
+<span class="fc" id="L203">        result.getPrizeDetails().removeIf(detail -&gt;</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">                !wantedKeys.contains(detail.getPrizeType() + &quot;:&quot; + detail.getWinningNumber()));</span>
+
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        for (Map.Entry&lt;String, Long&gt; entry : wanted.entrySet()) {</span>
+<span class="fc" id="L207">            PrizeDetail existing = currentByKey.get(entry.getKey());</span>
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">            if (existing != null) {</span>
+<span class="nc" id="L209">                existing.setRewardAmount(entry.getValue());</span>
+            } else {
+<span class="fc" id="L211">                int sep = entry.getKey().indexOf(':');</span>
+<span class="fc" id="L212">                result.addPrizeDetail(</span>
+<span class="fc" id="L213">                        PrizeDetail.builder()</span>
+<span class="fc" id="L214">                                .prizeType(entry.getKey().substring(0, sep))</span>
+<span class="fc" id="L215">                                .winningNumber(entry.getKey().substring(sep + 1))</span>
+<span class="fc" id="L216">                                .rewardAmount(entry.getValue())</span>
+<span class="fc" id="L217">                                .build()</span>
+                );
+            }
+<span class="fc" id="L220">        }</span>
+<span class="fc" id="L221">    }</span>
+
+    private String normalizeStatus(String status) {
+<span class="pc bpc" id="L224" title="1 of 4 branches missed.">        if (status == null || status.isBlank()) {</span>
+<span class="fc" id="L225">            return &quot;UNPUBLISH&quot;;</span>
+        }
+
+<span class="fc" id="L228">        String normalized = status.trim().toUpperCase();</span>
+
+<span class="pc bpc" id="L230" title="1 of 4 branches missed.">        if (!normalized.equals(&quot;PUBLISH&quot;) &amp;&amp; !normalized.equals(&quot;UNPUBLISH&quot;)) {</span>
+<span class="nc" id="L231">            throw new BadRequestException(&quot;Invalid ticket status. Allowed values are PUBLISH or UNPUBLISH.&quot;);</span>
+        }
+
+<span class="fc" id="L234">        return normalized;</span>
+    }
+
+    private void validatePrizes(List&lt;PrizeRequest&gt; prizes) {
+<span class="pc bpc" id="L238" title="2 of 4 branches missed.">        if (prizes == null || prizes.isEmpty()) {</span>
+<span class="nc" id="L239">            throw new BadRequestException(&quot;Prize details are required&quot;);</span>
+        }
+
+<span class="fc" id="L242">        Set&lt;String&gt; seen = new HashSet&lt;&gt;();</span>
+
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        for (PrizeRequest prize : prizes) {</span>
+<span class="pc bpc" id="L245" title="2 of 4 branches missed.">            if (prize.type() == null || prize.type().isBlank()) {</span>
+<span class="nc" id="L246">                throw new BadRequestException(&quot;Prize type is required&quot;);</span>
+            }
+
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">            if (prize.rewardAmount() == null) {</span>
+<span class="nc" id="L250">                throw new BadRequestException(&quot;Reward amount is required&quot;);</span>
+            }
+
+<span class="fc" id="L253">            String type = prize.type().trim().toUpperCase();</span>
+<span class="fc" id="L254">            Integer expectedLength = PRIZE_LENGTHS.get(type);</span>
+
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">            if (expectedLength == null) {</span>
+<span class="nc" id="L257">                throw new BadRequestException(&quot;Invalid prize type: &quot; + type);</span>
+            }
+
+<span class="pc bpc" id="L260" title="2 of 4 branches missed.">            if (prize.winningNumbers() == null || prize.winningNumbers().isBlank()) {</span>
+<span class="nc" id="L261">                throw new BadRequestException(&quot;Winning numbers are required for prize &quot; + type);</span>
+            }
+
+<span class="fc" id="L264">            String[] numbers = prize.winningNumbers().split(&quot;[,\\s]+&quot;);</span>
+
+<span class="fc bfc" id="L266" title="All 2 branches covered.">            for (String rawNumber : numbers) {</span>
+<span class="fc" id="L267">                String number = rawNumber.trim();</span>
+
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">                if (number.isBlank()) {</span>
+<span class="nc" id="L270">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                if (!number.matches(&quot;\\d+&quot;)) {</span>
+<span class="fc" id="L274">                    throw new BadRequestException(&quot;Winning numbers must contain digits only. Invalid value: &quot; + number);</span>
+                }
+
+<span class="fc bfc" id="L277" title="All 2 branches covered.">                if (number.length() != expectedLength) {</span>
+<span class="fc" id="L278">                    throw new BadRequestException(&quot;Prize &quot; + type + &quot; requires &quot; + expectedLength + &quot;-digit numbers. Invalid value: &quot; + number);</span>
+                }
+
+<span class="fc" id="L281">                String key = type + &quot;:&quot; + number;</span>
+
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">                if (!seen.add(key)) {</span>
+<span class="nc" id="L284">                    throw new ConflictException(&quot;Duplicate winning number detected for prize &quot; + type + &quot;: &quot; + number);</span>
+                }
+            }
+<span class="fc" id="L287">        }</span>
+<span class="fc" id="L288">    }</span>
+
+    private String generateResultCode(LotteryStation station, LocalDate drawDate) {
+<span class="fc" id="L291">        String dateStr = drawDate.format(DateTimeFormatter.ofPattern(&quot;ddMMyyyy&quot;));</span>
+
+<span class="pc bpc" id="L293" title="1 of 2 branches missed.">        String cityCode = station.getStationCode().contains(&quot;-&quot;)</span>
+<span class="fc" id="L294">                ? station.getStationCode().substring(station.getStationCode().lastIndexOf('-') + 1)</span>
+<span class="pc" id="L295">                : station.getStationCode();</span>
+
+<span class="fc" id="L297">        return String.format(&quot;RES-%s-%s&quot;, cityCode, dateStr);</span>
+    }
+
+    private User resolveAdmin(String adminEmail) {
+<span class="pc bpc" id="L301" title="1 of 4 branches missed.">        if (adminEmail == null || adminEmail.isBlank()) {</span>
+<span class="fc" id="L302">            return null;</span>
+        }
+
+<span class="fc" id="L305">        return userRepository.findByEmail(adminEmail).orElse(null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

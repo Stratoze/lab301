@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckerServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.service.impl</a> &gt; <span class="el_source">CheckerServiceImpl.java</span></div><h1>CheckerServiceImpl.java</h1><pre class="source lang-java linenums">package com.lottery.checker.service.impl;
+
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
+import com.lottery.checker.exception.NotFoundException;
+
+import com.lottery.checker.dto.request.CheckTicketsRequest;
+import com.lottery.checker.dto.response.CheckTicketResponse;
+import com.lottery.checker.dto.response.HistorySessionResponse;
+import com.lottery.checker.entity.CheckHistory;
+import com.lottery.checker.entity.CheckSession;
+import com.lottery.checker.entity.LotteryResult;
+import com.lottery.checker.entity.PrizeDetail;
+import com.lottery.checker.entity.User;
+import com.lottery.checker.repository.CheckHistoryRepository;
+import com.lottery.checker.repository.CheckSessionRepository;
+import com.lottery.checker.repository.LotteryResultRepository;
+import com.lottery.checker.repository.UserRepository;
+import com.lottery.checker.service.CheckerService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Service
+@RequiredArgsConstructor
+public class CheckerServiceImpl implements CheckerService {
+
+    private final LotteryResultRepository resultRepository;
+    private final UserRepository userRepository;
+    private final CheckSessionRepository sessionRepository;
+    private final CheckHistoryRepository checkHistoryRepository;
+
+    @Override
+    @Transactional
+    public CheckTicketResponse checkTickets(CheckTicketsRequest request, String userEmail) {
+<span class="fc" id="L43">        validateRequest(request, userEmail);</span>
+
+<span class="fc" id="L45">        Integer stationId = request.stationId();</span>
+<span class="fc" id="L46">        LocalDate date = request.date();</span>
+<span class="fc" id="L47">        List&lt;String&gt; numbers = request.numbers();</span>
+
+<span class="fc" id="L49">        LotteryResult result = resultRepository</span>
+<span class="fc" id="L50">                .findByStationIdAndDrawDate(stationId, date)</span>
+<span class="fc" id="L51">                .filter(r -&gt; &quot;PUBLISH&quot;.equals(r.getStatus()))</span>
+<span class="pc" id="L52">                .orElseThrow(() -&gt; new NotFoundException(&quot;No published results found for this date.&quot;));</span>
+
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        User user = userEmail != null ? userRepository.findByEmail(userEmail).orElse(null) : null;</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (user != null) {</span>
+<span class="fc" id="L57">            List&lt;String&gt; cleanNumbers = numbers.stream().map(String::trim).toList();</span>
+<span class="fc" id="L58">            List&lt;String&gt; duplicates = checkHistoryRepository.findExistingTickets(user.getId(), result.getId(), cleanNumbers);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            if (!duplicates.isEmpty()) {</span>
+<span class="nc" id="L60">                throw new ConflictException(&quot;You have already checked ticket(s): &quot; + String.join(&quot;, &quot;, duplicates) + &quot; for this draw. Each ticket can only be checked once.&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L64">        CheckSession session = CheckSession.builder()</span>
+<span class="fc" id="L65">                .user(user)</span>
+<span class="fc" id="L66">                .totalSpent((long) numbers.size() * 10000)</span>
+<span class="fc" id="L67">                .build();</span>
+
+<span class="fc" id="L69">        long totalWon = 0;</span>
+<span class="fc" id="L70">        List&lt;CheckTicketResponse.CheckDetail&gt; detailResults = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (String num : numbers) {</span>
+<span class="fc" id="L73">            CheckResult checkResult = processTicketCheck(session, result, num);</span>
+<span class="fc" id="L74">            totalWon += checkResult.amount();</span>
+<span class="fc" id="L75">            detailResults.add(checkResult.detail());</span>
+<span class="fc" id="L76">        }</span>
+
+<span class="fc" id="L78">        session.setTotalWon(totalWon);</span>
+<span class="fc" id="L79">        sessionRepository.save(session);</span>
+<span class="fc" id="L80">        resultRepository.incrementTotalQueries(result.getId());</span>
+
+<span class="fc" id="L82">        return new CheckTicketResponse(</span>
+<span class="fc" id="L83">                new CheckTicketResponse.CheckSummary(session.getTotalSpent(), totalWon),</span>
+                detailResults
+        );
+    }
+
+    private void validateRequest(CheckTicketsRequest request, String userEmail) {
+<span class="pc bpc" id="L89" title="1 of 4 branches missed.">        if (request.date() != null &amp;&amp; request.date().isAfter(LocalDate.now())) {</span>
+<span class="fc" id="L90">            throw new BadRequestException(&quot;Draw date cannot be in the future.&quot;);</span>
+        }
+
+<span class="fc bfc" id="L93" title="All 4 branches covered.">        if (userEmail == null &amp;&amp; request.numbers().size() &gt; 1) {</span>
+<span class="fc" id="L94">            throw new BadRequestException(&quot;Guests can only check one ticket at a time. Please login to check multiple tickets.&quot;);</span>
+        }
+
+<span class="fc" id="L97">        Set&lt;String&gt; seen = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        for (String number : request.numbers()) {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (!seen.add(number.trim())) {</span>
+<span class="fc" id="L100">                throw new ConflictException(&quot;Duplicate ticket number in request: \&quot;&quot; + number.trim() + &quot;\&quot;. Each ticket can only appear once.&quot;);</span>
+            }
+<span class="fc" id="L102">        }</span>
+<span class="fc" id="L103">    }</span>
+
+<span class="fc" id="L105">    private record CheckResult(CheckTicketResponse.CheckDetail detail, long amount) {}</span>
+
+    private CheckResult processTicketCheck(CheckSession session, LotteryResult result, String rawNumber) {
+<span class="fc" id="L108">        String cleanNum = rawNumber.trim();</span>
+<span class="fc" id="L109">        PrizeDetail winningPrize = findBestPrize(result.getPrizeDetails(), cleanNum);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        boolean isWon = winningPrize != null;</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        long amount = isWon ? winningPrize.getRewardAmount() : 0;</span>
+
+<span class="fc" id="L113">        CheckHistory history = CheckHistory.builder()</span>
+<span class="fc" id="L114">                .session(session)</span>
+<span class="fc" id="L115">                .result(result)</span>
+<span class="fc" id="L116">                .ticketNumber(cleanNum)</span>
+<span class="fc" id="L117">                .isWon(isWon)</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                .wonPrize(isWon ? winningPrize.getPrizeType() : null)</span>
+<span class="fc" id="L119">                .wonAmount(amount)</span>
+<span class="fc" id="L120">                .build();</span>
+
+<span class="fc" id="L122">        session.getHistories().add(history);</span>
+
+<span class="fc" id="L124">        CheckTicketResponse.CheckDetail detail = new CheckTicketResponse.CheckDetail(</span>
+                cleanNum,
+                isWon,
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                isWon ? winningPrize.getPrizeType() : &quot;None&quot;,</span>
+                amount
+        );
+
+<span class="fc" id="L131">        return new CheckResult(detail, amount);</span>
+    }
+
+    private PrizeDetail findBestPrize(List&lt;PrizeDetail&gt; prizes, String ticketNum) {
+<span class="fc" id="L135">        return prizes.stream()</span>
+<span class="fc" id="L136">                .filter(p -&gt; ticketNum.endsWith(p.getWinningNumber()))</span>
+<span class="fc" id="L137">                .max(Comparator.comparingLong(PrizeDetail::getRewardAmount))</span>
+<span class="fc" id="L138">                .orElse(null);</span>
+    }
+
+    @Override
+    public List&lt;LocalDate&gt; getAvailableDates(Integer stationId) {
+<span class="nc" id="L143">        return resultRepository.findDrawDatesByStation(stationId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;HistorySessionResponse&gt; getUserHistory(String email) {
+<span class="fc" id="L149">        User user = userRepository.findByEmail(email)</span>
+<span class="pc" id="L150">                .orElseThrow(() -&gt; new NotFoundException(&quot;User not found&quot;));</span>
+
+<span class="fc" id="L152">        List&lt;CheckSession&gt; sessions = sessionRepository.findAllWithHistoriesByUserId(user.getId());</span>
+
+<span class="fc" id="L154">        return sessions.stream()</span>
+<span class="fc" id="L155">                .map(this::mapToHistorySessionResponse)</span>
+<span class="fc" id="L156">                .toList();</span>
+    }
+
+    private HistorySessionResponse mapToHistorySessionResponse(CheckSession session) {
+<span class="fc" id="L160">        List&lt;HistorySessionResponse.HistoryTicketResponse&gt; tickets = session.getHistories().stream()</span>
+<span class="fc" id="L161">                .map(this::mapToHistoryTicketResponse)</span>
+<span class="fc" id="L162">                .toList();</span>
+
+<span class="fc" id="L164">        return new HistorySessionResponse(</span>
+<span class="fc" id="L165">                session.getId(),</span>
+<span class="fc" id="L166">                session.getCreatedAt(),</span>
+<span class="fc" id="L167">                session.getTotalSpent(),</span>
+<span class="fc" id="L168">                session.getTotalWon(),</span>
+                tickets
+        );
+    }
+
+    private HistorySessionResponse.HistoryTicketResponse mapToHistoryTicketResponse(CheckHistory history) {
+<span class="fc" id="L174">        return new HistorySessionResponse.HistoryTicketResponse(</span>
+<span class="fc" id="L175">                history.getTicketNumber(),</span>
+<span class="fc" id="L176">                history.getIsWon(),</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">                history.getWonPrize() != null ? history.getWonPrize() : &quot;No Prize&quot;,</span>
+<span class="fc" id="L178">                history.getWonAmount(),</span>
+<span class="fc" id="L179">                history.getResult().getStation().getName(),</span>
+<span class="fc" id="L180">                history.getResult().getDrawDate(),</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">                history.getCheckTime() != null ? history.getCheckTime() : history.getSession().getCreatedAt()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

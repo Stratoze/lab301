@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.config</a> &gt; <span class="el_source">SecurityConfig.java</span></div><h1>SecurityConfig.java</h1><pre class="source lang-java linenums">package com.lottery.checker.config;
+
+import com.lottery.checker.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value(&quot;${app.cors.allowed-origins:http://localhost:5173,http://localhost}&quot;)
+    private String allowedOrigins;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+<span class="fc" id="L39">        return new BCryptPasswordEncoder(12);</span>
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+<span class="fc" id="L44">        CorsConfiguration config = new CorsConfiguration();</span>
+<span class="fc" id="L45">        config.setAllowedOrigins(List.of(allowedOrigins.split(&quot;,&quot;)));</span>
+<span class="fc" id="L46">        config.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;PATCH&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
+<span class="fc" id="L47">        config.setAllowedHeaders(List.of(&quot;Authorization&quot;, &quot;Content-Type&quot;));</span>
+<span class="fc" id="L48">        config.setAllowCredentials(true);</span>
+<span class="fc" id="L49">        config.setMaxAge(3600L);</span>
+
+<span class="fc" id="L51">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="fc" id="L52">        source.registerCorsConfiguration(&quot;/**&quot;, config);</span>
+<span class="fc" id="L53">        return source;</span>
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+<span class="fc" id="L58">        http</span>
+<span class="fc" id="L59">            .csrf(AbstractHttpConfigurer::disable)</span>
+<span class="fc" id="L60">            .cors(cors -&gt; cors.configurationSource(corsConfigurationSource()))</span>
+<span class="fc" id="L61">            .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="fc" id="L62">            .exceptionHandling(ex -&gt; ex</span>
+<span class="fc" id="L63">                .authenticationEntryPoint((request, response, authException) -&gt; {</span>
+<span class="nc" id="L64">                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
+<span class="nc" id="L65">                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);</span>
+<span class="nc" id="L66">                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L67">                    response.getWriter().write(</span>
+                        &quot;{\&quot;status\&quot;:401,\&quot;message\&quot;:\&quot;Authentication required. Please login.\&quot;,\&quot;data\&quot;:null}&quot;
+                    );
+<span class="nc" id="L70">                })</span>
+<span class="fc" id="L71">                .accessDeniedHandler((request, response, accessDeniedException) -&gt; {</span>
+<span class="nc" id="L72">                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);</span>
+<span class="nc" id="L73">                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);</span>
+<span class="nc" id="L74">                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L75">                    response.getWriter().write(</span>
+                        &quot;{\&quot;status\&quot;:403,\&quot;message\&quot;:\&quot;Access denied. Insufficient permissions.\&quot;,\&quot;data\&quot;:null}&quot;
+                    );
+<span class="nc" id="L78">                })</span>
+            )
+<span class="fc" id="L80">            .authorizeHttpRequests(auth -&gt; auth</span>
+                // Public endpoints
+<span class="fc" id="L82">                .requestMatchers(&quot;/api/v1/auth/**&quot;).permitAll()</span>
+<span class="fc" id="L83">                .requestMatchers(</span>
+        &quot;/api/v1/password/forgot&quot;,
+                    &quot;/api/v1/password/reset&quot;,
+                    &quot;/api/v1/password/validate&quot;
+<span class="fc" id="L87">                ).permitAll()</span>
+<span class="fc" id="L88">                .requestMatchers(HttpMethod.GET, &quot;/api/v1/admin/tickets/stations&quot;).permitAll()</span>
+<span class="fc" id="L89">                .requestMatchers(HttpMethod.GET, &quot;/api/v1/checker/available-dates&quot;).permitAll()</span>
+<span class="fc" id="L90">                .requestMatchers(HttpMethod.POST, &quot;/api/v1/checker/check&quot;).permitAll()</span>
+                // Admin endpoints
+<span class="fc" id="L92">                .requestMatchers(&quot;/api/v1/admin/**&quot;).hasAuthority(&quot;ROLE_ADMIN&quot;)</span>
+                // User endpoints
+<span class="fc" id="L94">                .requestMatchers(&quot;/api/v1/user/**&quot;, &quot;/api/v1/checker/history&quot;).authenticated()</span>
+                // All other requests
+<span class="fc" id="L96">                .anyRequest().authenticated()</span>
+            )
+<span class="fc" id="L98">            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);</span>
+
+<span class="fc" id="L100">        return http.build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserExportService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.service</a> &gt; <span class="el_source">UserExportService.java</span></div><h1>UserExportService.java</h1><pre class="source lang-java linenums">package com.lottery.checker.service;
+
+import com.lottery.checker.dto.response.UserResponse;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.springframework.stereotype.Component;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@Component
+<span class="fc" id="L14">public class UserExportService {</span>
+
+<span class="fc" id="L16">    private static final String[] COLUMNS = {</span>
+            &quot;User Code&quot;, &quot;Full Name&quot;, &quot;Email&quot;, &quot;Phone&quot;, &quot;Role&quot;, &quot;Status&quot;, &quot;Last Login&quot;, &quot;Created At&quot;
+    };
+
+    public byte[] generateCsv(List&lt;UserResponse&gt; users) {
+<span class="fc" id="L21">        StringBuilder csv = new StringBuilder();</span>
+<span class="fc" id="L22">        csv.append(String.join(&quot;,&quot;, COLUMNS)).append('\n');</span>
+
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        for (UserResponse u : users) {</span>
+<span class="fc" id="L25">            csv.append(String.format(&quot;%s,%s,%s,%s,%s,%s,%s,%s%n&quot;,</span>
+<span class="fc" id="L26">                    escapeCsv(u.userCode()),</span>
+<span class="fc" id="L27">                    escapeCsv(u.fullName()),</span>
+<span class="fc" id="L28">                    escapeCsv(u.email()),</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">                    escapeCsv(u.phone() != null ? u.phone() : &quot;&quot;),</span>
+<span class="fc" id="L30">                    u.role().name(),</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">                    u.isActive() ? &quot;Active&quot; : &quot;Blocked&quot;,</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">                    u.lastLogin() != null ? u.lastLogin().toString() : &quot;Never&quot;,</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">                    u.createdAt() != null ? u.createdAt().toString() : &quot;&quot;</span>
+            ));
+<span class="fc" id="L35">        }</span>
+
+<span class="fc" id="L37">        return csv.toString().getBytes(StandardCharsets.UTF_8);</span>
+    }
+
+    public byte[] generateExcel(List&lt;UserResponse&gt; users) {
+        // SXSSF streams rows to disk to avoid OOM on large exports (keeps 100 rows in memory)
+<span class="fc" id="L42">        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {</span>
+<span class="fc" id="L43">            Sheet sheet = workbook.createSheet(&quot;Users&quot;);</span>
+<span class="fc" id="L44">            Row headerRow = sheet.createRow(0);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            for (int i = 0; i &lt; COLUMNS.length; i++) {</span>
+<span class="fc" id="L46">                headerRow.createCell(i).setCellValue(COLUMNS[i]);</span>
+            }
+<span class="fc" id="L48">            int rowIdx = 1;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            for (UserResponse u : users) {</span>
+<span class="fc" id="L50">                Row row = sheet.createRow(rowIdx++);</span>
+<span class="fc" id="L51">                row.createCell(0).setCellValue(u.userCode());</span>
+<span class="fc" id="L52">                row.createCell(1).setCellValue(u.fullName());</span>
+<span class="fc" id="L53">                row.createCell(2).setCellValue(u.email());</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                row.createCell(3).setCellValue(u.phone() != null ? u.phone() : &quot;&quot;);</span>
+<span class="fc" id="L55">                row.createCell(4).setCellValue(u.role().name());</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                row.createCell(5).setCellValue(u.isActive() ? &quot;Active&quot; : &quot;Blocked&quot;);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                row.createCell(6).setCellValue(u.lastLogin() != null ? u.lastLogin().toString() : &quot;Never&quot;);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                row.createCell(7).setCellValue(u.createdAt() != null ? u.createdAt().toString() : &quot;&quot;);</span>
+<span class="fc" id="L59">            }</span>
+<span class="fc" id="L60">            workbook.write(bos);</span>
+<span class="fc" id="L61">            return bos.toByteArray();</span>
+<span class="nc" id="L62">        } catch (Exception e) {</span>
+<span class="nc" id="L63">            throw new IllegalStateException(&quot;Failed to generate Excel file&quot;, e);</span>
+        }
+    }
+
+    private String escapeCsv(String value) {
+<span class="pc bpc" id="L68" title="2 of 6 branches missed.">        if (value.contains(&quot;,&quot;) || value.contains(&quot;\&quot;&quot;) || value.contains(&quot;\n&quot;)) {</span>
+<span class="fc" id="L69">            return &quot;\&quot;&quot; + value.replace(&quot;\&quot;&quot;, &quot;\&quot;\&quot;&quot;) + &quot;\&quot;&quot;;</span>
+        }
+<span class="fc" id="L71">        return value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LotteryResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.entity</a> &gt; <span class="el_source">LotteryResult.java</span></div><h1>LotteryResult.java</h1><pre class="source lang-java linenums">package com.lottery.checker.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;lottery_results&quot;, uniqueConstraints = {
+    @UniqueConstraint(name = &quot;unique_idx_station_date&quot;, columnNames = {&quot;station_id&quot;, &quot;draw_date&quot;})
+}, indexes = {
+    @Index(name = &quot;idx_draw_date&quot;, columnList = &quot;draw_date&quot;),
+    @Index(name = &quot;idx_status&quot;, columnList = &quot;status&quot;)
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class LotteryResult {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = &quot;result_code&quot;, nullable = false, unique = true, length = 30)
+    private String resultCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;station_id&quot;, nullable = false)
+    private LotteryStation station;
+
+    @Column(name = &quot;draw_date&quot;, nullable = false)
+    private LocalDate drawDate;
+
+    @Column(length = 20)
+    @Builder.Default
+    private String status = &quot;UNPUBLISH&quot;; // UNPUBLISH, PUBLISH
+
+    @Column(name = &quot;total_queries&quot;)
+    @Builder.Default
+    private Long totalQueries = 0L;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;created_by&quot;)
+    private User createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;published_by&quot;)
+    private User publishedBy;
+
+    @Column(name = &quot;published_at&quot;)
+    private LocalDateTime publishedAt;
+
+    @OneToMany(mappedBy = &quot;result&quot;, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List&lt;PrizeDetail&gt; prizeDetails = new ArrayList&lt;&gt;();
+
+    @CreationTimestamp
+    @Column(name = &quot;created_at&quot;, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = &quot;updated_at&quot;)
+    private LocalDateTime updatedAt;
+
+    public void addPrizeDetail(PrizeDetail detail) {
+<span class="fc" id="L73">        prizeDetails.add(detail);</span>
+<span class="fc" id="L74">        detail.setResult(this);</span>
+<span class="fc" id="L75">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.lottery.checker.exception;
+
+import com.lottery.checker.dto.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+<span class="fc" id="L15">@Slf4j</span>
+<span class="fc" id="L16">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleNotFound(NotFoundException e) {
+<span class="nc" id="L20">        log.warn(&quot;Not found: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L21">        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleConflict(ConflictException e) {
+<span class="nc" id="L26">        log.warn(&quot;Conflict: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L27">        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleBadRequest(BadRequestException e) {
+<span class="nc" id="L32">        log.warn(&quot;Bad request: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L33">        return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleUnauthorized(UnauthorizedException e) {
+<span class="nc" id="L38">        log.warn(&quot;Unauthorized: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L39">        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleForbidden(ForbiddenException e) {
+<span class="nc" id="L44">        log.warn(&quot;Forbidden: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L45">        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    // SocialAuthServiceImpl still throws java.lang.SecurityException for invalid or
+    // blocked social logins. Keep mapping it to 403 to preserve the existing wire
+    // contract until those errors are remapped to domain exceptions in a future pass.
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleSecurityException(SecurityException e) {
+<span class="nc" id="L53">        log.warn(&quot;Security exception: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L54">        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleRuntimeException(RuntimeException e) {
+<span class="nc" id="L59">        log.error(&quot;Runtime exception: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L60">        return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleValidationExceptions(MethodArgumentNotValidException ex) {
+<span class="nc" id="L65">        String message = ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="nc" id="L66">                .map(error -&gt; error.getField() + &quot;: &quot; + error.getDefaultMessage())</span>
+<span class="nc" id="L67">                .collect(Collectors.joining(&quot;, &quot;));</span>
+
+<span class="nc" id="L69">        return ResponseEntity.badRequest().body(ApiResponse.error(message));</span>
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+<span class="nc" id="L74">        log.error(&quot;Data integrity violation: {}&quot;, ex.getMessage(), ex);</span>
+
+<span class="nc" id="L76">        return ResponseEntity.status(HttpStatus.CONFLICT)</span>
+<span class="nc" id="L77">                .body(ApiResponse.error(&quot;Duplicate or invalid data. Please check your input.&quot;));</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; handleAllUncaughtException(Exception e) {
+<span class="nc" id="L82">        log.error(&quot;Unhandled exception: {}&quot;, e.getMessage(), e);</span>
+
+<span class="nc" id="L84">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L85">                .body(ApiResponse.error(&quot;Internal server error&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

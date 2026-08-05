@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.controller</a> &gt; <span class="el_source">AdminUserController.java</span></div><h1>AdminUserController.java</h1><pre class="source lang-java linenums">package com.lottery.checker.controller;
+
+import com.lottery.checker.dto.request.SendEmailRequest;
+import com.lottery.checker.dto.request.UpdateStatusRequest;
+import com.lottery.checker.dto.request.UpdateUserRequest;
+import com.lottery.checker.dto.response.ApiResponse;
+import com.lottery.checker.dto.response.PagedResponse;
+import com.lottery.checker.dto.response.UserResponse;
+import com.lottery.checker.service.UserExportService;
+import com.lottery.checker.service.UserService;
+import jakarta.validation.Valid;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/api/v1/admin/users&quot;)
+@RequiredArgsConstructor
+public class AdminUserController {
+
+    private final UserService userService;
+    private final UserExportService userExportService;
+
+    @GetMapping
+    public ResponseEntity&lt;ApiResponse&lt;PagedResponse&lt;UserResponse&gt;&gt;&gt; getUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String loginFilter,
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;20&quot;) int size
+    ) {
+<span class="fc" id="L36">        Pageable pageable = PageRequest.of(page, size);</span>
+<span class="fc" id="L37">        return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers(keyword, loginFilter, pageable)));</span>
+    }
+
+    @PatchMapping(&quot;/status&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; updateStatus(
+            @Valid @RequestBody UpdateStatusRequest request) {
+<span class="fc" id="L43">        userService.updateStatus(request.ids(), request.isActive());</span>
+<span class="fc" id="L44">        return ResponseEntity.ok(ApiResponse.success(&quot;Status updated successfully&quot;));</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;UserResponse&gt;&gt; updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request) {
+<span class="fc" id="L51">        return ResponseEntity.ok(ApiResponse.success(userService.updateUser(id, request)));</span>
+    }
+
+    @PostMapping(&quot;/send-email&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; sendEmail(
+            @Valid @RequestBody SendEmailRequest request) {
+<span class="fc" id="L57">        userService.sendBulkEmail(request.ids(), request.subject(), request.content());</span>
+<span class="fc" id="L58">        return ResponseEntity.ok(ApiResponse.success(&quot;Emails sent successfully&quot;));</span>
+    }
+
+    @GetMapping(&quot;/export&quot;)
+    public ResponseEntity&lt;?&gt; exportUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = &quot;csv&quot;) String format,
+            @RequestParam(required = false) List&lt;Long&gt; ids) {
+        List&lt;UserResponse&gt; users;
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">        if (ids != null &amp;&amp; !ids.isEmpty()) {</span>
+<span class="fc" id="L68">            users = userService.getUsersByIds(ids);</span>
+        } else {
+<span class="fc" id="L70">            users = userService.getAllUsers(keyword, null, Pageable.unpaged()).getContent();</span>
+        }
+
+<span class="fc bfc" id="L73" title="All 3 branches covered.">        return switch (format.toLowerCase()) {</span>
+            case &quot;excel&quot;, &quot;xlsx&quot; -&gt; {
+<span class="fc" id="L75">                byte[] bytes = userExportService.generateExcel(users);</span>
+<span class="fc" id="L76">                HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L77">                headers.setContentType(MediaType.parseMediaType(</span>
+                    &quot;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet&quot;));
+<span class="fc" id="L79">                headers.setContentDispositionFormData(&quot;attachment&quot;, &quot;users_export.xlsx&quot;);</span>
+<span class="fc" id="L80">                yield ResponseEntity.ok().headers(headers).body(bytes);</span>
+            }
+<span class="fc" id="L82">            case &quot;json&quot; -&gt; ResponseEntity.ok()</span>
+<span class="fc" id="L83">                .header(HttpHeaders.CONTENT_DISPOSITION, &quot;attachment; filename=\&quot;users_export.json\&quot;&quot;)</span>
+<span class="fc" id="L84">                .contentType(MediaType.APPLICATION_JSON)</span>
+<span class="fc" id="L85">                .body(ApiResponse.success(users));</span>
+            default -&gt; {
+<span class="fc" id="L87">                byte[] bytes = userExportService.generateCsv(users);</span>
+<span class="fc" id="L88">                HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L89">                headers.setContentType(MediaType.parseMediaType(&quot;text/csv&quot;));</span>
+<span class="fc" id="L90">                headers.setContentDispositionFormData(&quot;attachment&quot;, &quot;users_export.csv&quot;);</span>
+<span class="fc" id="L91">                yield ResponseEntity.ok().headers(headers).body(bytes);</span>
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

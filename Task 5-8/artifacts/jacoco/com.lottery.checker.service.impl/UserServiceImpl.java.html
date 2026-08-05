@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.service.impl</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package com.lottery.checker.service.impl;
+
+import com.lottery.checker.exception.BadRequestException;
+import com.lottery.checker.exception.ConflictException;
+import com.lottery.checker.exception.NotFoundException;
+
+import com.lottery.checker.dto.request.ChangePasswordRequest;
+import com.lottery.checker.dto.request.LinkSocialAccountRequest;
+import com.lottery.checker.dto.request.RegisterRequest;
+import com.lottery.checker.dto.request.UpdateMeRequest;
+import com.lottery.checker.dto.request.UpdateUserRequest;
+import com.lottery.checker.dto.response.LinkedAccountsResponse;
+import com.lottery.checker.service.UserCodeGenerator;
+import com.lottery.checker.dto.response.PagedResponse;
+import com.lottery.checker.dto.response.UserResponse;
+import com.lottery.checker.entity.PasswordResetToken;
+import com.lottery.checker.entity.Role;
+import com.lottery.checker.entity.User;
+import com.lottery.checker.entity.UserAuthProvider;
+import com.lottery.checker.repository.PasswordResetTokenRepository;
+import com.lottery.checker.repository.UserAuthProviderRepository;
+import com.lottery.checker.repository.UserRepository;
+import com.lottery.checker.service.SocialAuthService;
+import com.lottery.checker.service.UserService;
+import com.lottery.checker.validation.PasswordValidator;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L46">@Slf4j</span>
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final UserAuthProviderRepository userAuthProviderRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final JavaMailSender mailSender;
+    private final SocialAuthService socialAuthService;
+    private final PasswordValidator passwordValidator;
+    private final UserCodeGenerator userCodeGenerator;
+
+    @Value(&quot;${app.frontend-base-url}&quot;)
+    private String frontendBaseUrl;
+
+    @Override
+    @Transactional
+    public User register(RegisterRequest request) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (userRepository.findByEmail(request.email()).isPresent()) {</span>
+<span class="fc" id="L65">            throw new ConflictException(&quot;Email already exists&quot;);</span>
+        }
+
+<span class="fc" id="L68">        String cleanPhone = validateAndCleanPhone(request.phone(), null);</span>
+
+<span class="fc" id="L70">        User user = User.builder()</span>
+<span class="fc" id="L71">                .userCode(userCodeGenerator.generate())</span>
+<span class="fc" id="L72">                .email(request.email())</span>
+<span class="fc" id="L73">                .fullName(request.fullName())</span>
+<span class="fc" id="L74">                .phone(cleanPhone)</span>
+<span class="fc" id="L75">                .password(passwordEncoder.encode(request.password()))</span>
+<span class="fc" id="L76">                .role(Role.ROLE_USER)</span>
+<span class="fc" id="L77">                .isActive(true)</span>
+<span class="fc" id="L78">                .lastLogin(LocalDateTime.now())</span>
+<span class="fc" id="L79">                .build();</span>
+
+<span class="fc" id="L81">        return userRepository.save(user);</span>
+    }
+
+    @Override
+    public User findByEmail(String email) {
+<span class="fc" id="L86">        return userRepository.findByEmail(email)</span>
+<span class="pc" id="L87">                .orElseThrow(() -&gt; new NotFoundException(&quot;User not found&quot;));</span>
+    }
+
+    @Override
+    public Optional&lt;User&gt; findByEmailOptional(String email) {
+<span class="nc" id="L92">        return userRepository.findByEmail(email);</span>
+    }
+
+    @Override
+    public PagedResponse&lt;UserResponse&gt; getAllUsers(String keyword, Pageable pageable) {
+<span class="fc" id="L97">        return getAllUsers(keyword, null, pageable);</span>
+    }
+
+    @Override
+    public PagedResponse&lt;UserResponse&gt; getAllUsers(String keyword, String loginFilter, Pageable pageable) {
+<span class="fc" id="L102">        Page&lt;User&gt; userPage = userRepository.findAll(userSpecification(keyword, loginFilter), pageable);</span>
+
+<span class="fc" id="L104">        List&lt;UserResponse&gt; content = userPage.getContent().stream()</span>
+<span class="fc" id="L105">                .map(UserResponse::fromEntity)</span>
+<span class="fc" id="L106">                .toList();</span>
+
+<span class="fc" id="L108">        return PagedResponse.&lt;UserResponse&gt;builder()</span>
+<span class="fc" id="L109">                .content(content)</span>
+<span class="fc" id="L110">                .page(userPage.getNumber())</span>
+<span class="fc" id="L111">                .size(userPage.getSize())</span>
+<span class="fc" id="L112">                .totalElements(userPage.getTotalElements())</span>
+<span class="fc" id="L113">                .totalPages(userPage.getTotalPages())</span>
+<span class="fc" id="L114">                .last(userPage.isLast())</span>
+<span class="fc" id="L115">                .build();</span>
+    }
+
+    private Specification&lt;User&gt; userSpecification(String keyword, String loginFilter) {
+<span class="fc" id="L119">        return (root, query, cb) -&gt; {</span>
+<span class="nc" id="L120">            List&lt;Predicate&gt; predicates = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L122" title="All 4 branches missed.">            if (keyword != null &amp;&amp; !keyword.isBlank()) {</span>
+<span class="nc" id="L123">                String lowerKeyword = keyword.toLowerCase();</span>
+<span class="nc" id="L124">                String likePattern = &quot;%&quot; + lowerKeyword + &quot;%&quot;;</span>
+
+<span class="nc" id="L126">                Predicate keywordPredicate = cb.or(</span>
+<span class="nc" id="L127">                        cb.like(cb.lower(root.get(&quot;fullName&quot;)), likePattern),</span>
+<span class="nc" id="L128">                        cb.like(cb.lower(root.get(&quot;email&quot;)), likePattern),</span>
+<span class="nc" id="L129">                        cb.like(cb.lower(root.get(&quot;phone&quot;)), likePattern),</span>
+<span class="nc" id="L130">                        cb.like(cb.lower(root.get(&quot;userCode&quot;)), likePattern)</span>
+                );
+
+<span class="nc" id="L133">                predicates.add(keywordPredicate);</span>
+            }
+
+<span class="nc bnc" id="L136" title="All 4 branches missed.">            if (loginFilter != null &amp;&amp; !loginFilter.isBlank()) {</span>
+<span class="nc" id="L137">                boolean inactive = loginFilter.startsWith(&quot;inactive-&quot;);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                String period = inactive ? loginFilter.substring(&quot;inactive-&quot;.length()) : loginFilter;</span>
+
+<span class="nc" id="L140">                LocalDateTime now = LocalDateTime.now();</span>
+<span class="nc bnc" id="L141" title="All 7 branches missed.">                LocalDateTime cutoff = switch (period) {</span>
+<span class="nc" id="L142">                    case &quot;24h&quot; -&gt; now.minusHours(24);</span>
+<span class="nc" id="L143">                    case &quot;1w&quot; -&gt; now.minusWeeks(1);</span>
+<span class="nc" id="L144">                    case &quot;1m&quot; -&gt; now.minusMonths(1);</span>
+<span class="nc" id="L145">                    case &quot;3m&quot; -&gt; now.minusMonths(3);</span>
+<span class="nc" id="L146">                    case &quot;6m&quot; -&gt; now.minusMonths(6);</span>
+<span class="nc" id="L147">                    case &quot;1y&quot; -&gt; now.minusYears(1);</span>
+<span class="nc" id="L148">                    default -&gt; null;</span>
+                };
+
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                if (cutoff != null) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                    if (inactive) {</span>
+<span class="nc" id="L153">                        predicates.add(cb.or(</span>
+<span class="nc" id="L154">                                cb.isNull(root.get(&quot;lastLogin&quot;)),</span>
+<span class="nc" id="L155">                                cb.lessThan(root.get(&quot;lastLogin&quot;), cutoff)</span>
+                        ));
+                    } else {
+<span class="nc" id="L158">                        predicates.add(cb.greaterThanOrEqualTo(root.get(&quot;lastLogin&quot;), cutoff));</span>
+                    }
+                }
+            }
+
+<span class="nc" id="L163">            return cb.and(predicates.toArray(new Predicate[0]));</span>
+        };
+    }
+
+    @Override
+    @Transactional
+    public void updateStatus(List&lt;Long&gt; ids, boolean isActive) {
+<span class="nc" id="L170">        List&lt;User&gt; users = userRepository.findAllById(ids);</span>
+<span class="nc" id="L171">        users.forEach(user -&gt; user.setIsActive(isActive));</span>
+<span class="nc" id="L172">        userRepository.saveAll(users);</span>
+<span class="nc" id="L173">    }</span>
+
+    @Override
+    public List&lt;UserResponse&gt; getUsersByIds(List&lt;Long&gt; ids) {
+<span class="nc" id="L177">        return userRepository.findAllById(ids).stream()</span>
+<span class="nc" id="L178">                .map(UserResponse::fromEntity)</span>
+<span class="nc" id="L179">                .toList();</span>
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUser(Long id, UpdateUserRequest req) {
+<span class="fc" id="L185">        User user = userRepository.findById(id)</span>
+<span class="fc" id="L186">                .orElseThrow(() -&gt; new NotFoundException(&quot;User not found&quot;));</span>
+
+<span class="pc bpc" id="L188" title="3 of 4 branches missed.">        if (req.fullName() != null &amp;&amp; !req.fullName().isBlank()) {</span>
+<span class="nc" id="L189">            user.setFullName(req.fullName());</span>
+        }
+
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (req.phone() != null) {</span>
+<span class="nc" id="L193">            user.setPhone(validateAndCleanPhone(req.phone(), id));</span>
+        }
+
+<span class="pc bpc" id="L196" title="2 of 4 branches missed.">        if (req.role() != null &amp;&amp; !req.role().isBlank()) {</span>
+            try {
+<span class="nc" id="L198">                user.setRole(Role.valueOf(req.role()));</span>
+<span class="fc" id="L199">            } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L200">                throw new BadRequestException(&quot;Invalid role specified&quot;);</span>
+<span class="nc" id="L201">            }</span>
+        }
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if (req.isActive() != null) {</span>
+<span class="nc" id="L205">            user.setIsActive(req.isActive());</span>
+        }
+
+<span class="nc" id="L208">        return UserResponse.fromEntity(userRepository.save(user));</span>
+    }
+
+    @Override
+    public UserResponse getMe(String email) {
+<span class="nc" id="L213">        User user = findByEmail(email);</span>
+<span class="nc" id="L214">        return UserResponse.fromEntity(user);</span>
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateMe(String email, UpdateMeRequest req) {
+<span class="nc" id="L220">        User user = findByEmail(email);</span>
+
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (req.fullName() != null) {</span>
+<span class="nc" id="L223">            user.setFullName(req.fullName());</span>
+        }
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (req.phone() != null) {</span>
+<span class="nc" id="L227">            user.setPhone(validateAndCleanPhone(req.phone(), user.getId()));</span>
+        }
+
+<span class="nc" id="L230">        return UserResponse.fromEntity(userRepository.save(user));</span>
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest req) {
+<span class="fc" id="L236">        User user = findByEmail(email);</span>
+
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        boolean isSettingInitialPassword = user.getPassword() == null;</span>
+
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (isSettingInitialPassword) {</span>
+<span class="pc bpc" id="L241" title="1 of 4 branches missed.">            if (req.oldPassword() != null &amp;&amp; !req.oldPassword().isBlank()) {</span>
+<span class="fc" id="L242">                throw new BadRequestException(&quot;Account has no password set. Leave current password empty to set a new one.&quot;);</span>
+            }
+        } else {
+<span class="pc bpc" id="L245" title="1 of 4 branches missed.">            if (req.oldPassword() == null || !passwordEncoder.matches(req.oldPassword(), user.getPassword())) {</span>
+<span class="fc" id="L246">                throw new BadRequestException(&quot;Current password is incorrect&quot;);</span>
+            }
+        }
+
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">        if (!passwordValidator.isValid(req.newPassword(), null)) {</span>
+<span class="nc" id="L251">            throw new BadRequestException(&quot;New password does not meet security requirements. It must be 10-64 characters and not contain common words or patterns.&quot;);</span>
+        }
+
+<span class="fc" id="L254">        user.setPassword(passwordEncoder.encode(req.newPassword()));</span>
+<span class="fc" id="L255">        userRepository.save(user);</span>
+<span class="fc" id="L256">    }</span>
+
+    @Override
+    @Transactional
+    public void requestPasswordReset(String email) {
+<span class="fc" id="L261">        Optional&lt;User&gt; userOptional = userRepository.findByEmail(email);</span>
+
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (userOptional.isEmpty()) {</span>
+            // Do not reveal whether the email exists.
+<span class="fc" id="L265">            return;</span>
+        }
+
+<span class="fc" id="L268">        User user = userOptional.get();</span>
+<span class="fc" id="L269">        String resetCode = UUID.randomUUID().toString();</span>
+
+<span class="fc" id="L271">        PasswordResetToken resetTokenEntity = PasswordResetToken.builder()</span>
+<span class="fc" id="L272">                .user(user)</span>
+<span class="fc" id="L273">                .token(resetCode)</span>
+<span class="fc" id="L274">                .expiresAt(LocalDateTime.now().plusHours(1))</span>
+<span class="fc" id="L275">                .isUsed(false)</span>
+<span class="fc" id="L276">                .createdAt(LocalDateTime.now())</span>
+<span class="fc" id="L277">                .build();</span>
+
+<span class="fc" id="L279">        passwordResetTokenRepository.save(resetTokenEntity);</span>
+
+<span class="fc" id="L281">        String resetLink = frontendBaseUrl + &quot;/reset-password?&quot; + &quot;token&quot; + &quot;=&quot; + resetCode;</span>
+
+<span class="fc" id="L283">        SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="fc" id="L284">        message.setTo(user.getEmail());</span>
+<span class="fc" id="L285">        message.setSubject(&quot;Reset Your Lottery System Password&quot;);</span>
+<span class="fc" id="L286">        message.setText(</span>
+<span class="fc" id="L287">                &quot;Hello &quot; + user.getFullName() + &quot;,\n\n&quot; +</span>
+                &quot;Click the link below to reset your password:\n\n&quot; +
+                resetLink + &quot;\n\n&quot; +
+                &quot;If the link does not work, open this page in your browser:\n&quot; +
+                frontendBaseUrl + &quot;/reset-password\n\n&quot; +
+                &quot;Then enter this reset code manually:\n&quot; +
+                resetCode + &quot;\n\n&quot; +
+                &quot;This link expires in 1 hour.\n\n&quot; +
+                &quot;If you did not request this, please ignore this email.\n\n&quot; +
+                &quot;Lottery System&quot;
+        );
+
+<span class="fc" id="L299">        mailSender.send(message);</span>
+<span class="fc" id="L300">    }</span>
+
+    @Override
+    @Transactional
+    public void resetPassword(String tokenValue, String newPassword) {
+<span class="pc bpc" id="L305" title="2 of 4 branches missed.">        if (tokenValue == null || tokenValue.isBlank()) {</span>
+<span class="nc" id="L306">            throw new BadRequestException(&quot;Invalid or expired reset token&quot;);</span>
+        }
+
+<span class="fc" id="L309">        PasswordResetToken token = passwordResetTokenRepository.findByToken(tokenValue)</span>
+<span class="pc" id="L310">                .orElseThrow(() -&gt; new BadRequestException(&quot;Invalid or expired reset token&quot;));</span>
+
+<span class="fc bfc" id="L312" title="All 2 branches covered.">        if (Boolean.TRUE.equals(token.getIsUsed())) {</span>
+<span class="fc" id="L313">            throw new ConflictException(&quot;This reset link has already been used&quot;);</span>
+        }
+
+<span class="fc bfc" id="L316" title="All 2 branches covered.">        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {</span>
+<span class="fc" id="L317">            throw new BadRequestException(&quot;Invalid or expired reset token&quot;);</span>
+        }
+
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        if (!passwordValidator.isValid(newPassword, null)) {</span>
+<span class="nc" id="L321">            throw new BadRequestException(&quot;New password does not meet security requirements. It must be 10-64 characters and not contain common words or patterns.&quot;);</span>
+        }
+
+<span class="fc" id="L324">        User user = token.getUser();</span>
+<span class="fc" id="L325">        user.setPassword(passwordEncoder.encode(newPassword));</span>
+<span class="fc" id="L326">        userRepository.save(user);</span>
+
+<span class="fc" id="L328">        token.setIsUsed(true);</span>
+<span class="fc" id="L329">        passwordResetTokenRepository.save(token);</span>
+<span class="fc" id="L330">    }</span>
+
+    @Override
+    @Transactional
+    public void updateLastLogin(String email) {
+<span class="nc" id="L335">        User user = findByEmail(email);</span>
+<span class="nc" id="L336">        user.setLastLogin(LocalDateTime.now());</span>
+<span class="nc" id="L337">        userRepository.save(user);</span>
+<span class="nc" id="L338">    }</span>
+
+    @Override
+    public LinkedAccountsResponse getLinkedAccounts(String email) {
+<span class="nc" id="L342">        User user = findByEmail(email);</span>
+<span class="nc" id="L343">        List&lt;UserAuthProvider&gt; providers = userAuthProviderRepository.findByUser(user);</span>
+
+<span class="nc" id="L345">        return new LinkedAccountsResponse(</span>
+<span class="nc" id="L346">                providers.stream().anyMatch(p -&gt; &quot;GOOGLE&quot;.equals(p.getProvider())),</span>
+<span class="nc" id="L347">                providers.stream().anyMatch(p -&gt; &quot;FACEBOOK&quot;.equals(p.getProvider())),</span>
+<span class="nc" id="L348">                user.getPhone(),</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                user.getPassword() != null,</span>
+<span class="nc" id="L350">                providers.stream()</span>
+<span class="nc" id="L351">                        .map(p -&gt; new LinkedAccountsResponse.LinkedProvider(p.getProvider(), p.getProviderId()))</span>
+<span class="nc" id="L352">                        .toList()</span>
+        );
+    }
+
+    @Override
+    @Transactional
+    public void linkSocialAccount(String email, LinkSocialAccountRequest req) {
+<span class="fc" id="L359">        User user = findByEmail(email);</span>
+
+<span class="fc" id="L361">        boolean alreadyLinked = userAuthProviderRepository.existsByUserAndProvider(user, req.provider().toUpperCase());</span>
+
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">        if (alreadyLinked) {</span>
+<span class="fc" id="L364">            throw new ConflictException(&quot;Account already linked to &quot; + req.provider());</span>
+        }
+
+<span class="nc" id="L367">        socialAuthService.linkProvider(user, req.provider().toUpperCase(), req.token());</span>
+<span class="nc" id="L368">    }</span>
+
+    @Override
+    @Transactional
+    public void unlinkPhone(String email) {
+<span class="fc" id="L373">        User user = findByEmail(email);</span>
+<span class="fc" id="L374">        user.setPhone(null);</span>
+<span class="fc" id="L375">        userRepository.save(user);</span>
+<span class="fc" id="L376">    }</span>
+
+    @Override
+    @Transactional
+    public void sendBulkEmail(List&lt;Long&gt; ids, String subject, String content) {
+<span class="pc bpc" id="L381" title="1 of 4 branches missed.">        if (subject == null || subject.isBlank()) {</span>
+<span class="fc" id="L382">            throw new BadRequestException(&quot;Email subject is required&quot;);</span>
+        }
+
+<span class="pc bpc" id="L385" title="2 of 4 branches missed.">        if (content == null || content.isBlank()) {</span>
+<span class="fc" id="L386">            throw new BadRequestException(&quot;Email content is required&quot;);</span>
+        }
+
+<span class="nc" id="L389">        List&lt;User&gt; users = userRepository.findAllById(ids);</span>
+
+<span class="nc bnc" id="L391" title="All 2 branches missed.">        for (User user : users) {</span>
+<span class="nc" id="L392">            SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="nc" id="L393">            message.setTo(user.getEmail());</span>
+<span class="nc" id="L394">            message.setSubject(subject);</span>
+<span class="nc" id="L395">            message.setText(String.format(</span>
+                    &quot;Hello %s,%n%n%s%n%n– Lottery System&quot;,
+<span class="nc" id="L397">                    user.getFullName(),</span>
+                    content
+            ));
+
+<span class="nc" id="L401">            mailSender.send(message);</span>
+<span class="nc" id="L402">        }</span>
+<span class="nc" id="L403">    }</span>
+
+    @Override
+    public boolean isResetTokenValid(String resetCode) {
+<span class="nc bnc" id="L407" title="All 4 branches missed.">        if (resetCode == null || resetCode.isBlank()) {</span>
+<span class="nc" id="L408">            return false;</span>
+        }
+
+<span class="nc" id="L411">        return passwordResetTokenRepository.findByToken(resetCode)</span>
+<span class="nc" id="L412">                .map(resetTokenEntity -&gt;</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                        !Boolean.TRUE.equals(resetTokenEntity.getIsUsed())</span>
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                        &amp;&amp; resetTokenEntity.getExpiresAt().isAfter(LocalDateTime.now())</span>
+                )
+<span class="nc" id="L416">                .orElse(false);</span>
+    }
+
+    private String validateAndCleanPhone(String phone, Long excludeUserId) {
+<span class="pc bpc" id="L420" title="2 of 4 branches missed.">        if (phone == null || phone.isBlank()) return null;</span>
+<span class="fc" id="L421">        String trimmed = phone.trim();</span>
+<span class="pc bpc" id="L422" title="1 of 2 branches missed.">        if (!trimmed.matches(&quot;^\\d{7,15}$&quot;)) {</span>
+<span class="nc" id="L423">            throw new BadRequestException(&quot;Invalid phone number format&quot;);</span>
+        }
+<span class="fc" id="L425">        userRepository.findByPhone(trimmed)</span>
+<span class="pc bpc" id="L426" title="3 of 4 branches missed.">                .filter(existing -&gt; excludeUserId == null || !existing.getId().equals(excludeUserId))</span>
+<span class="fc" id="L427">                .ifPresent(existing -&gt; {</span>
+<span class="fc" id="L428">                    throw new ConflictException(&quot;Phone number already exists&quot;);</span>
+                });
+<span class="fc" id="L430">        return trimmed;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>

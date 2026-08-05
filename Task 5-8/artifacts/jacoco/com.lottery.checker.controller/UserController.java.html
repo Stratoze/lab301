@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">com.lottery.checker.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">package com.lottery.checker.controller;
+
+import com.lottery.checker.dto.request.ChangePasswordRequest;
+import com.lottery.checker.dto.request.LinkSocialAccountRequest;
+import com.lottery.checker.dto.request.UpdateMeRequest;
+import com.lottery.checker.dto.response.ApiResponse;
+import com.lottery.checker.dto.response.LinkedAccountsResponse;
+import com.lottery.checker.dto.response.UserResponse;
+import com.lottery.checker.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.security.Principal;
+
+@RestController
+@RequestMapping(&quot;/api/v1/user&quot;)
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserService userService;
+
+    @GetMapping(&quot;/me&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;UserResponse&gt;&gt; getMe(Principal principal) {
+<span class="fc" id="L26">        return ResponseEntity.ok(ApiResponse.success(userService.getMe(principal.getName())));</span>
+    }
+
+    @PutMapping(&quot;/me&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;UserResponse&gt;&gt; updateMe(Principal principal, @Valid @RequestBody UpdateMeRequest request) {
+<span class="fc" id="L31">        return ResponseEntity.ok(ApiResponse.success(userService.updateMe(principal.getName(), request)));</span>
+    }
+
+    @PostMapping(&quot;/change-password&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; changePassword(Principal principal, @Valid @RequestBody ChangePasswordRequest request) {
+<span class="fc" id="L36">        userService.changePassword(principal.getName(), request);</span>
+<span class="fc" id="L37">        return ResponseEntity.ok(ApiResponse.success(&quot;Password changed successfully&quot;));</span>
+    }
+
+    @GetMapping(&quot;/linked-accounts&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;LinkedAccountsResponse&gt;&gt; getLinkedAccounts(Principal principal) {
+<span class="fc" id="L42">        return ResponseEntity.ok(ApiResponse.success(userService.getLinkedAccounts(principal.getName())));</span>
+    }
+
+    @PostMapping(&quot;/link-social&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; linkSocialAccount(Principal principal, @Valid @RequestBody LinkSocialAccountRequest request) {
+<span class="fc" id="L47">        userService.linkSocialAccount(principal.getName(), request);</span>
+<span class="fc" id="L48">        return ResponseEntity.ok(ApiResponse.success(&quot;Account linked successfully&quot;));</span>
+    }
+
+    @PostMapping(&quot;/unlink-phone&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; unlinkPhone(Principal principal) {
+<span class="fc" id="L53">        userService.unlinkPhone(principal.getName());</span>
+<span class="fc" id="L54">        return ResponseEntity.ok(ApiResponse.success(&quot;Phone number unlinked&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
